@@ -1,0 +1,25 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# Node / Capacitor（Play版ビルドで後から入るもの）
+node_modules/
+/android/
+/ios/
+.gradle/
+*.keystore
+*.jks
+
+# Build output
+dist/
+build/
+www/

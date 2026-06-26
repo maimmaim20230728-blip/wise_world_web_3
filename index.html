@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#6c43c4">
+<meta name="description" content="Wise World 3 - a lightweight, offline quiz app to learn the basics of living healthily">
+<title>Wise World 3</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+  :root{
+    --bg1:#f1edfb; --bg2:#e9e3f7;
+    --ink:#1f2d33; --ink-soft:#5b6b72;
+    --card:#ffffff; --line:#dfe3ee;
+    --brand:#6c43c4; --brand-dark:#4a2a90; --brand-soft:#ece3fb;
+    --gold:#f2a73b; --gold-soft:#fff2dd;
+    --correct:#15a35a; --correct-soft:#e4f6ec;
+    --wrong:#e0524d; --wrong-soft:#fbe7e6;
+    --shadow:0 8px 24px rgba(31,45,51,.10);
+    --shadow-sm:0 3px 10px rgba(31,45,51,.08);
+    --r:18px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Yu Gothic UI",
+      "Noto Sans JP","Segoe UI",system-ui,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(165deg,var(--bg1),var(--bg2));
+    background-attachment:fixed;
+    line-height:1.7; -webkit-text-size-adjust:100%; overflow-x:hidden;
+  }
+  #app{max-width:540px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; position:relative;}
+  .screen{
+    position:relative; display:none; flex-direction:column;
+    min-height:100vh; min-height:100dvh;
+    padding:18px 18px calc(18px + env(safe-area-inset-bottom));
+    padding-top:calc(14px + env(safe-area-inset-top)); animation:fade .28s ease;
+  }
+  .screen.active{display:flex;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  .topbar{display:flex; align-items:center; gap:10px; min-height:34px; margin-bottom:6px;}
+  .topbar .spacer{flex:1;}
+  .iconbtn{border:none; background:var(--card); color:var(--ink-soft); width:38px; height:38px;
+    border-radius:50%; font-size:18px; cursor:pointer; box-shadow:var(--shadow-sm); display:grid; place-items:center;}
+  .iconbtn:active{transform:scale(.94);}
+  .lv-pill{display:inline-flex; align-items:center; gap:6px; background:var(--brand); color:#fff;
+    font-weight:700; padding:6px 13px; border-radius:999px; font-size:14px; box-shadow:var(--shadow-sm);}
+  .btn{border:none; border-radius:var(--r); cursor:pointer; font-family:inherit; font-weight:700;
+    font-size:18px; padding:16px 18px; width:100%; transition:transform .08s, box-shadow .15s, background .15s;}
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--brand); color:#fff; box-shadow:0 6px 16px rgba(108,67,196,.35);}
+  .btn-primary:active{background:var(--brand-dark);}
+
+  /* top-center buttons: language + sound（中央上部に配置・右上のLV/もんめ表示と重ならない） */
+  .corner-btns{position:fixed; top:calc(10px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:40; display:flex; gap:12px;}
+  .corner-btns button{width:42px; height:42px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,255,255,.9); box-shadow:var(--shadow-sm); font-size:19px; display:grid;
+    place-items:center; backdrop-filter:blur(3px);}
+  .corner-btns button:active{transform:scale(.92);}
+  /* 中央上部のボタンと重ならないよう、クイズ/結果画面は上部に余白を確保 */
+  #quiz, #result{padding-top:calc(62px + env(safe-area-inset-top));}
+
+  /* ============ HOME ============ */
+  #home{justify-content:safe center; text-align:center; gap:20px; overflow:hidden;}
+  .sky{position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none;}
+  .sun{position:absolute; top:7%; left:50%; width:120px; height:120px; margin-left:-60px; border-radius:50%;
+    background:radial-gradient(circle at 50% 50%, #ffe39a, #ffd166 60%, rgba(255,209,102,0)); animation:sunpulse 5s ease-in-out infinite;}
+  @keyframes sunpulse{0%,100%{transform:scale(1); opacity:.85;} 50%{transform:scale(1.08); opacity:1;}}
+  .cloud{position:absolute; font-size:42px; opacity:.85; animation:drift linear infinite;}
+  @keyframes drift{from{transform:translateX(-130px);} to{transform:translateX(560px);}}
+  .bubbles{position:absolute; inset:0; z-index:0; pointer-events:none;}
+  .bubbles span{position:absolute; bottom:-50px; font-size:30px; opacity:0; animation:rise linear infinite;}
+  @keyframes rise{0%{transform:translateY(0) rotate(0); opacity:0;} 10%{opacity:.9;} 90%{opacity:.9;} 100%{transform:translateY(-112vh) rotate(25deg); opacity:0;}}
+  .home-inner{position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:18px; width:100%;}
+  .mascot{font-size:78px; line-height:1; filter:drop-shadow(0 8px 12px rgba(31,45,51,.18)); animation:bob 2.4s ease-in-out infinite; transform-origin:center bottom;}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-12px) rotate(2deg);}}
+  .title{font-size:40px; font-weight:800; letter-spacing:.5px; margin:0; animation:pop .7s cubic-bezier(.2,1.4,.4,1) both;}
+  .title .w1{color:var(--brand); display:inline-block; animation:wob 3s ease-in-out infinite;}
+  .title .w2{color:var(--gold); display:inline-block; animation:wob 3s ease-in-out .4s infinite;}
+  .title .w3{color:var(--brand-dark); display:inline-block; animation:wob 3s ease-in-out .8s infinite;}
+  @keyframes pop{from{transform:scale(.5); opacity:0;} to{transform:scale(1); opacity:1;}}
+  @keyframes wob{0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-5px) rotate(2deg);}}
+  .tagline{margin:-6px 0 0; color:var(--ink-soft); font-size:15px; font-weight:700;}
+  .lvcard{background:rgba(255,255,255,.92); border-radius:var(--r); box-shadow:var(--shadow); padding:16px 20px; text-align:left; width:100%; max-width:360px; backdrop-filter:blur(2px);}
+  .lvcard .row{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;}
+  .lvcard .big{font-size:24px; font-weight:800; color:var(--brand);}
+  .lvcard .big .star{color:var(--gold);}
+  .lvcard .exp-num{font-size:14px; color:var(--ink-soft); font-weight:700;}
+  .bar{height:15px; background:var(--brand-soft); border-radius:999px; overflow:hidden;}
+  .bar>span{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--gold),#f7c46a); border-radius:999px; transition:width .6s cubic-bezier(.2,.8,.2,1);}
+  .hint{font-size:12.5px; color:var(--ink-soft); margin:7px 2px 0;}
+  .start-btn{width:100%; max-width:360px; font-size:20px; padding:18px; background:linear-gradient(135deg,#8257d6,#6c43c4);
+    color:#fff; border:none; border-radius:20px; box-shadow:0 8px 20px rgba(108,67,196,.42); cursor:pointer; font-weight:800;
+    font-family:inherit; position:relative; overflow:hidden; animation:beat 1.8s ease-in-out infinite;}
+  .start-btn:active{transform:scale(.97);}
+  @keyframes beat{0%,100%{transform:scale(1);} 50%{transform:scale(1.04);}}
+  .start-btn::after{content:""; position:absolute; top:0; left:-60%; width:40%; height:100%;
+    background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.5),rgba(255,255,255,0)); transform:skewX(-20deg); animation:shine 3.2s ease-in-out infinite;}
+  @keyframes shine{0%{left:-60%;} 55%,100%{left:130%;}}
+  .home-foot{position:relative; z-index:1; margin-top:6px;}
+  .linkbtn{background:none; border:none; color:var(--ink-soft); font-size:12.5px; text-decoration:underline; cursor:pointer; font-family:inherit;}
+  .review-note{display:none; font-size:11px; color:var(--ink-soft); text-align:center; max-width:340px; margin:9px auto 0; line-height:1.45; opacity:.85;}
+  .credit{display:block; margin-top:10px; font-size:11.5px; color:var(--brand-dark); text-decoration:underline; opacity:.9; text-align:center;}
+  .credit:active{opacity:.6;}
+
+  /* ============ QUIZ ============ */
+  .topic-tag{align-self:flex-start; background:var(--brand-soft); color:var(--brand-dark); font-weight:700; font-size:13px; padding:4px 12px; border-radius:999px; margin-bottom:10px;}
+  .qillust{font-size:58px; text-align:center; line-height:1; margin:4px 0 12px; filter:drop-shadow(0 5px 8px rgba(31,45,51,.12)); animation:bob 2.6s ease-in-out infinite;}
+  .question{font-size:21px; font-weight:800; margin:0 0 18px; text-align:center; word-break:auto-phrase;}
+  .choices{display:flex; flex-direction:column; gap:12px; margin-top:auto;}
+  .choice{background:var(--card); color:var(--ink); text-align:left; border:2px solid var(--line); border-radius:14px;
+    padding:15px 16px 15px 52px; position:relative; font-size:17px; font-weight:700; box-shadow:var(--shadow-sm); transition:transform .08s;}
+  .choice:active{transform:scale(.99);}
+  .choice .mark{position:absolute; left:13px; top:50%; transform:translateY(-50%); width:26px; height:26px; border-radius:50%;
+    background:var(--brand-soft); color:var(--brand-dark); display:grid; place-items:center; font-size:14px; font-weight:800;}
+  .choice.correct{background:var(--correct-soft); border-color:var(--correct); color:#0e6e3c;}
+  .choice.correct .mark{background:var(--correct); color:#fff;}
+  .choice.wrong{background:var(--wrong-soft); border-color:var(--wrong); color:#a8302c;}
+  .choice.wrong .mark{background:var(--wrong); color:#fff;}
+  .choice.dim{opacity:.5;}
+  /* RTL: 選択肢のマークを右側へ */
+  [dir="rtl"] .choice{text-align:right; padding:15px 52px 15px 16px;}
+  [dir="rtl"] .choice .mark{left:auto; right:13px;}
+  [dir="rtl"] .topic-tag{align-self:flex-end;}
+  [dir="rtl"] .lvcard{text-align:right;}
+  [dir="rtl"] .corner-btns{left:50%; right:auto; transform:translateX(-50%);}
+  [dir="rtl"] .expl,[dir="rtl"] .expl h3{text-align:right;}
+
+  /* ============ RESULT ============ */
+  .result-head{text-align:center; margin-bottom:2px;}
+  .verdict{font-size:30px; font-weight:800; margin:2px 0;}
+  .verdict.ok{color:var(--correct);} .verdict.ng{color:var(--wrong);}
+  .expl-wrap{position:relative; flex:1; margin:10px 0 12px; min-height:0;}
+  .expl{height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:18px 18px 22px; font-size:16.5px;}
+  .expl h3{margin:0 0 8px; font-size:16px; color:var(--brand-dark);}
+  .scroll-cue{position:absolute; left:0; right:0; bottom:0; height:46px; background:linear-gradient(to top, var(--card), rgba(255,255,255,0));
+    border-radius:0 0 var(--r) var(--r); pointer-events:none; display:grid; place-items:end center; padding-bottom:6px; color:var(--brand); font-size:20px; transition:opacity .25s;}
+  .scroll-cue.hide{opacity:0;}
+  .reward{margin-bottom:10px;}
+  .reward-hint{display:block; text-align:center; font-size:13.5px; font-weight:700; color:#b9740d; margin-bottom:7px; transition:transform .2s;}
+  .reward-hint.pop{transform:scale(1.12);}
+  .mini-exp{display:flex; align-items:center; gap:10px;}
+  .mini-exp .mini-lv{font-size:14px; font-weight:800; color:var(--brand); white-space:nowrap;}
+  .mini-exp .bar{flex:1;}
+  .mini-exp .bar>span{transition:width .12s linear;}
+  .btn.locked{background:#cfd8d5; color:#7d8b87; box-shadow:none;}
+
+  /* ============ overlays (level up / language) ============ */
+  .overlay{position:fixed; inset:0; z-index:30; display:none; place-items:center; background:rgba(20,40,34,.55); backdrop-filter:blur(2px); padding:24px; animation:fade .25s ease;}
+  .overlay.show{display:grid;}
+  .levelup{background:var(--card); border-radius:24px; box-shadow:var(--shadow); padding:30px 26px; text-align:center; max-width:340px; width:100%; position:relative; overflow:hidden; animation:pop2 .45s cubic-bezier(.2,1.3,.4,1);}
+  @keyframes pop2{from{transform:scale(.7); opacity:0;} to{transform:scale(1); opacity:1;}}
+  .levelup .spark{font-size:50px; animation:spin 2.4s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .levelup h2{margin:6px 0 2px; font-size:26px; color:var(--gold);}
+  .levelup .newlv{font-size:42px; font-weight:800; color:var(--brand); margin:4px 0 14px;}
+  .confetti{position:absolute; top:-12px; width:9px; height:14px; border-radius:2px; animation:fall linear infinite;}
+  @keyframes fall{to{transform:translateY(360px) rotate(360deg); opacity:0;}}
+  .lu-msg{display:none; margin:2px 0 14px; font-size:14.5px; line-height:1.55; font-weight:700; color:var(--ink-soft);}
+  /* 10の倍数：通常より派手（金系の背景・大きめのスパーク/レベル） */
+  .levelup.milestone{background:linear-gradient(165deg,#fff7e6,#e8f9ef);}
+  .levelup.milestone .spark{font-size:62px;}
+  .levelup.milestone h2{color:var(--brand); font-size:27px;}
+  .levelup.milestone .newlv{font-size:50px;}
+  .levelup.finale{background:linear-gradient(165deg,#fff7e6,#ffe9f2);}
+  .levelup.finale .spark{font-size:66px; animation:spin 3s linear infinite;}
+  .levelup.finale h2{font-size:24px; font-weight:800; background:linear-gradient(90deg,#e0524d,#f2a73b,#15a35a,#5bb5e0,#9b5be0,#e0524d); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation:hue 3s linear infinite;}
+  @keyframes hue{to{background-position:-200% center;}}
+  .levelup.finale .newlv{font-size:54px;}
+  .levelup.finale .lu-msg{display:block; color:var(--brand-dark);}
+  .langbox{background:var(--card); border-radius:24px; box-shadow:var(--shadow); padding:24px; max-width:340px; width:100%; text-align:center; animation:pop2 .35s cubic-bezier(.2,1.3,.4,1);}
+  .langbox h2{margin:0 0 16px; font-size:20px; color:var(--brand-dark);}
+  .lang-list{display:flex; flex-direction:column; gap:10px; margin-bottom:14px; max-height:55vh; overflow-y:auto;}
+  .lang-item{padding:13px; border-radius:12px; border:2px solid var(--line); background:#fff; font-size:17px; font-weight:700; font-family:inherit; cursor:pointer; color:var(--ink);}
+  .lang-item.current{border-color:var(--brand); background:var(--brand-soft); color:var(--brand-dark);}
+
+  /* ============ ふりがな（日本語の総ルビ）============ */
+  ruby{ruby-position:over; ruby-align:center;}
+  rt{font-size:.56em; font-weight:600; color:var(--ink-soft); letter-spacing:0; user-select:none;}
+  /* 日本語はルビの分だけ行間を広げて重なりを防ぐ */
+  html[lang="ja"] .question{line-height:1.95;}
+  html[lang="ja"] .expl{line-height:2.05;}
+  html[lang="ja"] .choice{line-height:1.85;}
+  html[lang="ja"] .expl h3{line-height:1.9;}
+  html[lang="ja"] .topic-tag{line-height:1.7;}
+
+  @media (prefers-reduced-motion: reduce){
+    .mascot,.qillust,.title,.title .w1,.title .w2,.title .w3,.start-btn,.start-btn::after,.sun,.cloud,.bubbles span{animation:none !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="corner-btns">
+    <button id="lang-btn" title="Language">🌐</button>
+    <button id="mute-btn" title="Sound">🔊</button>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <section id="home" class="screen active">
+    <div class="sky" aria-hidden="true">
+      <div class="sun"></div>
+      <div class="cloud" style="top:14%; animation-duration:26s;">☁️</div>
+      <div class="cloud" style="top:24%; animation-duration:34s; animation-delay:-8s; font-size:32px;">☁️</div>
+    </div>
+    <div class="bubbles" id="bubbles" aria-hidden="true"></div>
+
+    <div class="home-inner">
+      <div class="mascot">🦉</div>
+      <h1 class="title"><span class="w1">Wise</span> <span class="w2">World</span> <span class="w3">3</span></h1>
+      <p class="tagline" id="t-tagline">生きる ちからを まなぼう ✨</p>
+
+      <div class="lvcard">
+        <div class="row">
+          <span class="big"><span class="star">★</span> LV.<span id="home-lv">1</span></span>
+          <span class="exp-num"><span id="home-exp">0</span> / <span id="home-need">100</span> EXP</span>
+        </div>
+        <div class="bar"><span id="home-bar"></span></div>
+        <p class="hint" id="home-hint"></p>
+      </div>
+
+      <button class="start-btn" id="start-btn">▶</button>
+    </div>
+
+    <div class="home-foot">
+      <button class="linkbtn" id="reset-btn">reset</button>
+      <p class="review-note" id="review-note"></p>
+      <a class="credit" id="credit-link" href="https://soyogi.hp.peraichi.com/top" target="_blank" rel="noopener noreferrer"></a>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section id="quiz" class="screen">
+    <div class="topbar">
+      <button class="iconbtn" id="quiz-home" title="home">✕</button>
+      <div class="spacer"></div>
+      <span class="lv-pill" id="quiz-pill">LV.1</span>
+    </div>
+    <div class="topic-tag" id="q-topic"></div>
+    <div class="qillust" id="q-emoji">💧</div>
+    <h2 class="question" id="q-text"></h2>
+    <div class="choices" id="q-choices"></div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section id="result" class="screen">
+    <div class="result-head"><div class="verdict" id="verdict"></div></div>
+    <div class="expl-wrap">
+      <div class="expl" id="expl">
+        <h3 id="expl-q"></h3>
+        <div id="expl-body"></div>
+      </div>
+      <div class="scroll-cue" id="scroll-cue">⌄</div>
+    </div>
+    <div class="reward">
+      <span class="reward-hint" id="reward-hint"></span>
+      <div class="mini-exp">
+        <span class="mini-lv">LV.<b id="r-lv">1</b></span>
+        <div class="bar"><span id="r-bar"></span></div>
+      </div>
+    </div>
+    <button class="btn locked" id="next-btn" disabled></button>
+  </section>
+
+  <!-- ============ LEVEL UP ============ -->
+  <div class="overlay" id="levelup-overlay">
+    <div class="levelup" id="levelup-box">
+      <div class="spark" id="lu-spark">✨</div>
+      <h2 id="lu-title">Level Up!</h2>
+      <div class="newlv">LV.<span id="lu-lv">2</span></div>
+      <p class="lu-msg" id="lu-msg"></p>
+      <button class="btn btn-primary" id="lu-ok">OK</button>
+    </div>
+  </div>
+
+  <!-- ============ LANGUAGE ============ -->
+  <div class="overlay" id="lang-overlay">
+    <div class="langbox">
+      <h2 id="lang-title">Language</h2>
+      <div class="lang-list" id="lang-list"></div>
+      <button class="btn btn-primary" id="lang-close">×</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="i18n.js"></script>
+<script src="audio.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var EXP_PER_LEVEL=100, EXP_CORRECT=25, EXP_WRONG=20, READ_LOCK_MS=5000, MAX_LEVEL=99;
+  var STORAGE_KEY="wiseworld3.save.v1", LANG_KEY="wiseworld3.lang.v1";
+  var LABELS=["A","B","C","D"];
+
+  var I18N = window.WISE_WORLD_I18N || { langs:[{code:"en",native:"English",dir:"ltr"}], ui:{en:{}} };
+  var lang = "en";
+  var QUESTIONS = [];
+
+  var state={ level:1, exp:0, remaining:[], answered:0 };
+  var current=null, lockTimer=null, timerDone=false;
+  var pendingExp=0, earning=false, expAnimTimer=null, resolveAfterOverlay=null;
+  var currentScreen="home";
+
+  var el=function(id){ return document.getElementById(id); };
+  var screens={ home:el("home"), quiz:el("quiz"), result:el("result") };
+  var explEl=el("expl"), nextBtn=el("next-btn"), scrollCue=el("scroll-cue");
+  // 日本語はふりがな(<ruby>)を含むのでHTMLとして描画。他言語はテキスト描画（安全）。
+  function setRich(elm, str){ if(lang==="ja"){ elm.innerHTML=str||""; } else { elm.textContent=str||""; } }
+
+  /* ---- i18n helper ---- */
+  function t(key, n){
+    var tbl=(I18N.ui[lang]||{}), s=tbl[key];
+    if(s==null) s=(I18N.ui.en||{})[key];
+    if(s==null) s=key;
+    return (n==null) ? s : s.replace("{n}", n);
+  }
+
+  /* ---- persistence ---- */
+  function load(){
+    try{ var s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+      if(s){ if(typeof s.level==="number")state.level=s.level; if(typeof s.exp==="number")state.exp=s.exp;
+        if(Array.isArray(s.remaining))state.remaining=s.remaining; if(typeof s.answered==="number")state.answered=s.answered; }
+    }catch(e){}
+  }
+  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+
+  /* ---- language ---- */
+  function availLangs(){ return I18N.langs.map(function(l){ return l.code; }); }
+  function pickInitialLang(){
+    var saved=null; try{ saved=localStorage.getItem(LANG_KEY); }catch(e){}
+    var av=availLangs();
+    if(saved && av.indexOf(saved)>=0) return saved;
+    var nav=((navigator.language||navigator.userLanguage||"en")+"").toLowerCase();
+    var base=nav.split("-")[0];
+    if(av.indexOf(nav)>=0) return nav;
+    if(av.indexOf(base)>=0) return base;
+    return av.indexOf("en")>=0 ? "en" : av[0];
+  }
+  function questionsFor(code){ return (window.WISE_WORLD_Q && window.WISE_WORLD_Q[code]) || []; }
+  function loadLang(code, cb){
+    if(window.WISE_WORLD_Q && window.WISE_WORLD_Q[code]){ cb(); return; }
+    var s=document.createElement("script");
+    s.src="questions."+code+".js";
+    s.onload=function(){ cb(); };
+    s.onerror=function(){ if(code!=="en"){ loadLang("en", cb); } else { cb(); } };
+    document.head.appendChild(s);
+  }
+  function setLang(code){
+    lang=code;
+    try{ localStorage.setItem(LANG_KEY, code); }catch(e){}
+    var meta=I18N.langs.filter(function(l){ return l.code===code; })[0] || {dir:"ltr"};
+    document.documentElement.lang=code;
+    document.documentElement.dir=meta.dir||"ltr";
+    loadLang(code, function(){
+      QUESTIONS=questionsFor(code);
+      if(QUESTIONS.length===0 && code!=="en"){ QUESTIONS=questionsFor("en"); }
+      applyI18n();
+      renderHome();
+    });
+  }
+  function applyI18n(){
+    el("t-tagline").textContent=t("tagline");
+    el("start-btn").textContent=t("start");
+    el("reset-btn").textContent=t("reset");
+    el("lu-title").textContent=t("levelUp");
+    el("lu-ok").textContent=t("levelUpOk");
+    el("lang-title").textContent=t("chooseLang");
+    el("credit-link").textContent=t("credit");
+    var note=(I18N.ui[lang]||{}).reviewNote, nEl=el("review-note");
+    if(note){ nEl.textContent=note; nEl.style.display="block"; } else { nEl.style.display="none"; }
+  }
+  function buildLangList(){
+    var box=el("lang-list"); box.innerHTML="";
+    I18N.langs.forEach(function(l){
+      var b=document.createElement("button");
+      b.className="lang-item"+(l.code===lang?" current":"");
+      b.textContent=l.native;
+      b.addEventListener("click", function(){
+        WiseAudio&&WiseAudio.sfx("tap");
+        el("lang-overlay").classList.remove("show");
+        if(l.code!==lang) setLang(l.code);
+      });
+      box.appendChild(b);
+    });
+  }
+
+  /* ---- audio / screens ---- */
+  function bgmFor(name){ if(!WiseAudio || !WiseAudio.state().started) return; WiseAudio.startBGM(name==="home"?"title":"play"); }
+  function show(name){ currentScreen=name; for(var k in screens){ screens[k].classList.toggle("active", k===name); } window.scrollTo(0,0); bgmFor(name); }
+
+  /* ---- home ---- */
+  function updateQuizPill(){ el("quiz-pill").textContent = "LV."+state.level+" · "+t("count", state.answered+1); }
+  function renderHome(){
+    el("home-lv").textContent=state.level;
+    var atMax=state.level>=MAX_LEVEL;
+    el("home-exp").textContent=atMax?EXP_PER_LEVEL:state.exp;
+    el("home-need").textContent=EXP_PER_LEVEL;
+    el("home-hint").textContent=atMax?t("maxReached"):t("toNext", EXP_PER_LEVEL-state.exp);
+    updateQuizPill();
+    var pct=atMax?100:Math.max(0, Math.min(100,(state.exp/EXP_PER_LEVEL)*100));
+    requestAnimationFrame(function(){ el("home-bar").style.width=pct+"%"; });
+  }
+
+  /* ---- deck ---- */
+  function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  // 出題デッキを作り直す（全問シャッフル）。直前の問題が先頭に来たら末尾へ回し、境界での即連続repeatも防ぐ。
+  function rebuildDeck(excludeId){
+    var ids=shuffle(QUESTIONS.map(function(q){ return q.id; }));
+    if(excludeId!=null && ids.length>1 && ids[0]===excludeId){ ids.push(ids.shift()); }
+    state.remaining=ids;
+  }
+  function nextQuestion(){
+    var ids=QUESTIONS.map(function(q){ return q.id; });
+    // 現在の問題群に存在するidだけ残す（言語切替などに追従）
+    state.remaining=(state.remaining||[]).filter(function(id){ return ids.indexOf(id)>=0; });
+    // remainingが空＝全問やり切った時だけ作り直す。連続出題では同じ問題が出ない。
+    if(state.remaining.length===0){ rebuildDeck(current?current.id:null); }
+    var id=state.remaining.shift(); save();
+    return QUESTIONS.filter(function(x){ return x.id===id; })[0] || QUESTIONS[0];
+  }
+
+  /* ---- quiz ---- */
+  function startQuiz(){
+    if(QUESTIONS.length===0) return;
+    current=nextQuestion();
+    updateQuizPill();
+    setRich(el("q-topic"), current.topic||"");
+    el("q-emoji").textContent=current.emoji||"❓";
+    setRich(el("q-text"), current.question);
+    var box=el("q-choices"); box.innerHTML="";
+    // ★毎回ランダムに並べ替える（位置で覚えさせない）。origは元の選択肢番号。
+    var order=shuffle(current.choices.map(function(_,i){ return i; }));
+    order.forEach(function(orig, pos){
+      var b=document.createElement("button"); b.className="choice"; b.setAttribute("data-orig", orig);
+      var mark='<span class="mark">'+LABELS[pos]+'</span>';
+      if(lang==="ja"){ b.innerHTML=mark+(current.choices[orig]||""); }
+      else { b.innerHTML=mark; b.appendChild(document.createTextNode(current.choices[orig])); }
+      b.addEventListener("click", function(){ onAnswer(orig,b); }, {once:true});
+      box.appendChild(b);
+    });
+    show("quiz");
+  }
+  function onAnswer(choiceIndex, btn){
+    var buttons=document.querySelectorAll("#q-choices .choice");
+    buttons.forEach(function(b){ b.style.pointerEvents="none"; });
+    var correct=(choiceIndex===current.answerIndex);
+    // 並べ替えに対応：data-orig で正解ボタンを探して色付け
+    buttons.forEach(function(b){
+      var o=parseInt(b.getAttribute("data-orig"),10);
+      if(o===current.answerIndex) b.classList.add("correct");
+      else if(b!==btn) b.classList.add("dim");
+    });
+    if(!correct) btn.classList.add("wrong");
+    WiseAudio && WiseAudio.sfx(correct?"correct":"wrong");
+    // EXPは解答時に入れない（読了後に加算）
+    pendingExp=correct?EXP_CORRECT:EXP_WRONG;
+    state.answered+=1; save();
+    setTimeout(function(){ toResult(correct); }, 850);
+  }
+
+  /* ---- result ---- */
+  function toResult(correct){
+    var v=el("verdict");
+    v.textContent=correct?t("correct"):t("wrong");
+    v.className="verdict "+(correct?"ok":"ng");
+    setRich(el("expl-q"), current.question);
+    setRich(el("expl-body"), current.explanation);
+    var hint=el("reward-hint"); hint.classList.remove("pop");
+    hint.textContent=t("rewardPending", pendingExp);
+    renderResultExp(state.level, state.exp);
+    explEl.scrollTop=0; earning=false;
+    show("result"); startReadLock();
+  }
+  function renderResultExp(level, exp){ el("r-lv").textContent=level; el("r-bar").style.width=Math.max(0,Math.min(100,(exp/EXP_PER_LEVEL)*100))+"%"; }
+
+  function startReadLock(){
+    timerDone=false;
+    var remaining=Math.ceil(READ_LOCK_MS/1000);
+    nextBtn.disabled=true; nextBtn.className="btn locked"; nextBtn.textContent=t("nextLocked", remaining);
+    clearInterval(lockTimer);
+    lockTimer=setInterval(function(){
+      remaining-=1;
+      if(remaining>0){ nextBtn.textContent=t("nextLocked", remaining); }
+      else{ clearInterval(lockTimer); timerDone=true; refreshNextButton(); }
+    },1000);
+    refreshNextButton();
+  }
+  function scrolledToEnd(){
+    var sc=explEl.scrollHeight>explEl.clientHeight+4;
+    if(!sc) return true;
+    return (explEl.scrollTop+explEl.clientHeight)>=(explEl.scrollHeight-8);
+  }
+  function refreshNextButton(){
+    if(earning) return;
+    var atEnd=scrolledToEnd();
+    scrollCue.classList.toggle("hide", atEnd);
+    if(!timerDone) return;
+    if(atEnd){ nextBtn.disabled=false; nextBtn.className="btn btn-primary"; nextBtn.textContent=t("nextReady"); }
+    else{ nextBtn.disabled=true; nextBtn.className="btn locked"; nextBtn.textContent=t("nextScroll"); }
+  }
+
+  /* ---- 読了後にEXP加算（次の問題へ行く間に） ---- */
+  function earnThenAdvance(){
+    if(earning) return; earning=true;
+    nextBtn.disabled=true; nextBtn.className="btn locked"; nextBtn.textContent=t("earning");
+    scrollCue.classList.add("hide");
+    var hint=el("reward-hint"); hint.textContent=t("rewardEarned", pendingExp); hint.classList.add("pop");
+    WiseAudio && WiseAudio.sfx("exp");
+    animateExpGain(pendingExp, function(){ setTimeout(startQuiz, 250); });
+  }
+  function animateExpGain(amount, done){
+    var startExp=state.exp, target=startExp+amount, STEP=40, steps=Math.max(1,Math.round(850/STEP)), i=0;
+    clearInterval(expAnimTimer);
+    expAnimTimer=setInterval(function(){
+      i++; var p=Math.min(1,i/steps); var val=startExp+(target-startExp)*p;
+      var sl=state.level, se=val; while(se>=EXP_PER_LEVEL && sl<MAX_LEVEL){ se-=EXP_PER_LEVEL; sl++; }
+      if(sl>=MAX_LEVEL){ sl=MAX_LEVEL; se=EXP_PER_LEVEL; }
+      renderResultExp(sl, se);
+      if(p<1) return;
+      clearInterval(expAnimTimer);
+      var startLevel=state.level; state.exp=target;
+      while(state.exp>=EXP_PER_LEVEL && state.level<MAX_LEVEL){ state.exp-=EXP_PER_LEVEL; state.level++; }
+      if(state.level>=MAX_LEVEL){ state.level=MAX_LEVEL; state.exp=EXP_PER_LEVEL; }
+      save(); renderResultExp(state.level, state.exp); updateQuizPill();
+      if(state.level>startLevel){ celebrateLevelUp(state.level, done); }
+      else { done && done(); }
+    }, STEP);
+  }
+
+  /* ---- level up（通常=控えめ / 10の倍数=派手 / 99=ド派手フィナーレ）---- */
+  function celebrateLevelUp(level, done){
+    // どのレベルアップでも必ずポップ（紙吹雪＋サウンド）を出す。段階で派手さを変える。
+    if(level>=MAX_LEVEL){ showLevelUp("finale", level, done); return; }   // 99：最高
+    if(level%10===0){ showLevelUp("milestone", level, done); return; }    // 10の倍数：さらに派手
+    showLevelUp("normal", level, done);                                   // 通常
+  }
+  function showLevelUp(type, level, done){
+    resolveAfterOverlay=done;
+    var box=el("levelup-box");
+    var finale=(type==="finale"), milestone=(type==="milestone");
+    box.classList.toggle("finale", finale);
+    box.classList.toggle("milestone", milestone);
+    el("lu-spark").textContent=finale?"🏆":(milestone?"🎉":"✨");
+    el("lu-title").textContent=finale?t("congrats"):t("levelUp");
+    el("lu-lv").textContent=level;
+    el("lu-msg").textContent=finale?t("maxReached"):"";
+    el("lu-ok").textContent=t("levelUpOk");
+    // サウンドも段階的に豪華に（通常→10の倍数→99）
+    WiseAudio && WiseAudio.sfx(finale?"fanfare":(milestone?"levelbig":"levelup"));
+    box.querySelectorAll(".confetti").forEach(function(c){ c.remove(); });
+    var colors=["#f2a73b","#1f8a70","#e0524d","#5bb5e0","#9b5be0","#f7c46a","#15a35a"];
+    var n=finale?50:(milestone?36:22);
+    for(var i=0;i<n;i++){ var c=document.createElement("span"); c.className="confetti";
+      c.style.left=(Math.random()*100)+"%"; c.style.background=colors[i%colors.length];
+      c.style.animationDuration=(1.5+Math.random()*1.7)+"s"; c.style.animationDelay=(Math.random()*(finale?1.0:0.6))+"s"; box.appendChild(c); }
+    el("levelup-overlay").classList.add("show");
+  }
+  function dismissLevelUp(){ el("levelup-overlay").classList.remove("show"); var r=resolveAfterOverlay; resolveAfterOverlay=null; r&&r(); }
+
+  function resetProgress(){
+    if(!confirm(t("resetConfirm"))) return;
+    state={ level:1, exp:0, remaining:[], answered:0 }; save(); renderHome();
+  }
+  function refreshMuteIcon(){ el("mute-btn").textContent=WiseAudio && WiseAudio.isMuted() ? "🔇" : "🔊"; }
+
+  function buildBubbles(){
+    var emojis=["💧","🧼","🍎","📚","🚿","🪥","☀️","🌱","✋","🍼"], box=el("bubbles");
+    for(var i=0;i<10;i++){ var s=document.createElement("span"); s.textContent=emojis[i%emojis.length];
+      s.style.left=(5+Math.random()*90)+"%"; s.style.fontSize=(22+Math.random()*18)+"px";
+      s.style.animationDuration=(11+Math.random()*9)+"s"; s.style.animationDelay=(-Math.random()*14)+"s"; box.appendChild(s); }
+  }
+
+  /* ---- wire up ---- */
+  el("start-btn").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); startQuiz(); });
+  el("quiz-home").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); state.remaining=[]; save(); renderHome(); show("home"); });
+  el("reset-btn").addEventListener("click", resetProgress);
+  nextBtn.addEventListener("click", function(){ if(nextBtn.disabled) return; WiseAudio&&WiseAudio.sfx("tap"); earnThenAdvance(); });
+  el("lu-ok").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); dismissLevelUp(); });
+  el("lang-btn").addEventListener("click", function(e){ e.stopPropagation(); WiseAudio&&WiseAudio.unlock(); refreshMuteIcon(); buildLangList(); el("lang-overlay").classList.add("show"); });
+  el("lang-close").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); el("lang-overlay").classList.remove("show"); });
+  el("mute-btn").addEventListener("click", function(e){ e.stopPropagation(); WiseAudio.unlock(); var m=WiseAudio.toggleMute(); refreshMuteIcon(); if(!m && currentScreen==="home") WiseAudio.startBGM("title"); });
+  explEl.addEventListener("scroll", refreshNextButton);
+  window.addEventListener("resize", refreshNextButton);
+
+  function firstGesture(){ WiseAudio.unlock(); bgmFor(currentScreen); refreshMuteIcon();
+    window.removeEventListener("pointerdown", firstGesture); window.removeEventListener("keydown", firstGesture); }
+  window.addEventListener("pointerdown", firstGesture);
+  window.addEventListener("keydown", firstGesture);
+
+  /* ---- boot ---- */
+  buildBubbles(); refreshMuteIcon(); load();
+  lang=pickInitialLang();
+  setLang(lang);   // questionsを読み込み→applyI18n→renderHome
+
+  if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
+    window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+  }
+})();
+</script>
+</body>
+</html>
