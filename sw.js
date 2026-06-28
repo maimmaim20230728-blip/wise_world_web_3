@@ -3,7 +3,7 @@
  * オフラインで完全に動くように、アプリ一式をキャッシュします。
  * 中身を更新したら CACHE の数字を上げてください（例 v1 -> v2）。
  */
-var CACHE = "wiseworld3-v5";
+var CACHE = "wiseworld3-v6";
 var ASSETS = [
   "./",
   "./index.html",
