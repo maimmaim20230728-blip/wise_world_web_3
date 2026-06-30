@@ -585,7 +585,7 @@
   }
 
   /* ---- wire up ---- */
-  el("start-btn").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); startQuiz(); });
+  el("start-btn").addEventListener("click", function(){ if(WiseAudio){ WiseAudio.unlock(); WiseAudio.sfx("tap"); } startQuiz(); });
   el("quiz-home").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); state.remaining=[]; save(); renderHome(); show("home"); });
   el("reset-btn").addEventListener("click", resetProgress);
   nextBtn.addEventListener("click", function(){ if(nextBtn.disabled) return; WiseAudio&&WiseAudio.sfx("tap"); earnThenAdvance(); });
@@ -596,7 +596,10 @@
   explEl.addEventListener("scroll", refreshNextButton);
   window.addEventListener("resize", refreshNextButton);
 
-  function firstGesture(){ WiseAudio.unlock(); bgmFor(currentScreen); refreshMuteIcon();
+  /* タイトルを開いたら自動でBGM開始（Capacitor/インストール済PWAは即時）。ブラウザの自動再生制限がある場合は
+     最初の操作で自動的に鳴らす（明示的な「タップで有効化」は不要） */
+  function autoStartBgm(){ if(WiseAudio){ WiseAudio.unlock(); WiseAudio.startBGM("title"); refreshMuteIcon(); } }
+  function firstGesture(){ if(WiseAudio) WiseAudio.unlock();
     window.removeEventListener("pointerdown", firstGesture); window.removeEventListener("keydown", firstGesture); }
   window.addEventListener("pointerdown", firstGesture);
   window.addEventListener("keydown", firstGesture);
@@ -605,6 +608,7 @@
   buildBubbles(); refreshMuteIcon(); load();
   lang=pickInitialLang();
   setLang(lang);   // questionsを読み込み→applyI18n→renderHome
+  autoStartBgm();  // タイトルで自動BGM（許可されていれば即時／不可なら最初の操作で）
 
   if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });

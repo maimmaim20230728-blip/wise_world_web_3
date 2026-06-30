@@ -18,7 +18,7 @@ window.WiseAudio = (function(){
 
   var ctx=null, master=null, comp=null, bgmGain=null, sfxGain=null;
   var muted=false, started=false, noiseBuf=null;
-  var bgmTimer=null, curTrack=null, bgmBus=null;
+  var bgmTimer=null, curTrack=null, bgmBus=null, pendingTrack=null;
   var MUTE_KEY="wiseworld3.muted.v1";
 
   var N={
@@ -81,6 +81,7 @@ window.WiseAudio = (function(){
     var AC=window.AudioContext||window.webkitAudioContext;
     if(!AC) return null;
     ctx=new AC();
+    ctx.onstatechange=function(){ if(ctx.state==="running" && pendingTrack){ var t=pendingTrack; pendingTrack=null; _startBGMNow(t); } };
     master=ctx.createGain(); master.gain.value=muted?0:0.55;
     comp=ctx.createDynamicsCompressor();
     comp.threshold.value=-18; comp.knee.value=24; comp.ratio.value=3; comp.attack.value=0.004; comp.release.value=0.22;
@@ -179,6 +180,12 @@ window.WiseAudio = (function(){
     bgmTimer=setTimeout(function(){ if(curTrack===name) scheduleLoop(name, start+loopDur); }, Math.max(80, loopDur*1000-200));
   }
   function startBGM(name){
+    if(!ensure()) return;
+    // 自動再生制限などで未稼働のときは予約し、稼働になった瞬間(onstatechange)に再生する
+    if(ctx.state!=="running"){ pendingTrack=name; if(ctx.resume) ctx.resume(); return; }
+    _startBGMNow(name);
+  }
+  function _startBGMNow(name){
     if(!ensure()) return;
     if(curTrack===name && bgmTimer) return;
     stopBGM();
