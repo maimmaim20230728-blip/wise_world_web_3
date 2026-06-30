@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#6c43c4">
 <meta name="description" content="Wise World 3 - a lightweight, offline quiz app to learn the basics of living healthily">
+<!-- Farcaster Mini App 埋め込み（タイムラインで画像＋ボタンのカードとして表示・タップで起動） -->
+<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://maimmaim20230728-blip.github.io/wise_world_web_3/icons/farcaster-embed.png","button":{"title":"🧠 Play / 遊ぶ","action":{"type":"launch_miniapp","name":"Wise World 3","url":"https://maimmaim20230728-blip.github.io/wise_world_web_3/","splashImageUrl":"https://maimmaim20230728-blip.github.io/wise_world_web_3/icons/icon-512.png","splashBackgroundColor":"#6c43c4"}}}' />
+<!-- 旧クライアント/バリデータ互換のための fc:frame 併記（中身は同一） -->
+<meta name="fc:frame" content='{"version":"1","imageUrl":"https://maimmaim20230728-blip.github.io/wise_world_web_3/icons/farcaster-embed.png","button":{"title":"🧠 Play / 遊ぶ","action":{"type":"launch_frame","name":"Wise World 3","url":"https://maimmaim20230728-blip.github.io/wise_world_web_3/","splashImageUrl":"https://maimmaim20230728-blip.github.io/wise_world_web_3/icons/icon-512.png","splashBackgroundColor":"#6c43c4"}}}' />
 <title>Wise World 3</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -606,6 +610,13 @@
     window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
   }
 })();
+</script>
+<!-- Farcaster Mini App SDK: 読込完了をクライアントへ通知しスプラッシュを閉じる（通常ブラウザ/オフラインでは無害にスキップ） -->
+<script type="module">
+  try {
+    const { sdk } = await import("https://esm.sh/@farcaster/miniapp-sdk");
+    await sdk.actions.ready();
+  } catch (e) { /* Farcaster外では何もしない */ }
 </script>
 </body>
 </html>

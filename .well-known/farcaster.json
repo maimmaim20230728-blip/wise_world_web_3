@@ -1,0 +1,14 @@
+{
+  "miniapp": {
+    "version": "1",
+    "name": "Wise World 3",
+    "iconUrl": "https://maimmaim20230728-blip.github.io/wise_world_web_3/icons/icon-512.png",
+    "homeUrl": "https://maimmaim20230728-blip.github.io/wise_world_web_3/",
+    "imageUrl": "https://maimmaim20230728-blip.github.io/wise_world_web_3/icons/farcaster-embed.png",
+    "buttonTitle": "🧠 Play / 遊ぶ",
+    "splashImageUrl": "https://maimmaim20230728-blip.github.io/wise_world_web_3/icons/icon-512.png",
+    "splashBackgroundColor": "#6c43c4",
+    "primaryCategory": "education",
+    "tags": ["quiz", "education", "kids", "learning", "soyogi"]
+  }
+}
