@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#6c43c4">
 <meta name="description" content="Wise World 3 - a lightweight, offline quiz app to learn the basics of living healthily">
-<!-- Farcaster Mini App 埋め込み（タイムラインで画像＋ボタンのカードとして表示・タップで起動） -->
-<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://wise-world-web-3.vercel.app/icons/farcaster-embed.png","button":{"title":"🧠 Play / 遊ぶ","action":{"type":"launch_miniapp","name":"Wise World 3","url":"https://wise-world-web-3.vercel.app/","splashImageUrl":"https://wise-world-web-3.vercel.app/icons/icon-512.png","splashBackgroundColor":"#6c43c4"}}}' />
-<!-- 旧クライアント/バリデータ互換のための fc:frame 併記（中身は同一） -->
-<meta name="fc:frame" content='{"version":"1","imageUrl":"https://wise-world-web-3.vercel.app/icons/farcaster-embed.png","button":{"title":"🧠 Play / 遊ぶ","action":{"type":"launch_frame","name":"Wise World 3","url":"https://wise-world-web-3.vercel.app/","splashImageUrl":"https://wise-world-web-3.vercel.app/icons/icon-512.png","splashBackgroundColor":"#6c43c4"}}}' />
 <title>Wise World 3</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -168,7 +164,7 @@
   .confetti{position:absolute; top:-12px; width:9px; height:14px; border-radius:2px; animation:fall linear infinite;}
   @keyframes fall{to{transform:translateY(360px) rotate(360deg); opacity:0;}}
   .lu-msg{display:none; margin:2px 0 14px; font-size:14.5px; line-height:1.55; font-weight:700; color:var(--ink-soft);}
-  /* 10の倍数：通常より派手（金系の背景・大きめのスパーク/レベル） */
+  /* 5の倍数：通常より派手（金系の背景・大きめのスパーク/レベル） */
   .levelup.milestone{background:linear-gradient(165deg,#fff7e6,#e8f9ef);}
   .levelup.milestone .spark{font-size:62px;}
   .levelup.milestone h2{color:var(--brand); font-size:27px;}
@@ -541,11 +537,11 @@
     }, STEP);
   }
 
-  /* ---- level up（通常=控えめ / 10の倍数=派手 / 99=ド派手フィナーレ）---- */
+  /* ---- level up（通常=控えめ / 5の倍数=派手 / 99=ド派手フィナーレ）---- */
   function celebrateLevelUp(level, done){
     // どのレベルアップでも必ずポップ（紙吹雪＋サウンド）を出す。段階で派手さを変える。
     if(level>=MAX_LEVEL){ showLevelUp("finale", level, done); return; }   // 99：最高
-    if(level%10===0){ showLevelUp("milestone", level, done); return; }    // 10の倍数：さらに派手
+    if(level%5===0){ showLevelUp("milestone", level, done); return; }    // 5の倍数：さらに派手
     showLevelUp("normal", level, done);                                   // 通常
   }
   function showLevelUp(type, level, done){
@@ -559,7 +555,7 @@
     el("lu-lv").textContent=level;
     el("lu-msg").textContent=finale?t("maxReached"):"";
     el("lu-ok").textContent=t("levelUpOk");
-    // サウンドも段階的に豪華に（通常→10の倍数→99）
+    // サウンドも段階的に豪華に（通常→5の倍数→99）
     WiseAudio && WiseAudio.sfx(finale?"fanfare":(milestone?"levelbig":"levelup"));
     box.querySelectorAll(".confetti").forEach(function(c){ c.remove(); });
     var colors=["#f2a73b","#1f8a70","#e0524d","#5bb5e0","#9b5be0","#f7c46a","#15a35a"];
@@ -614,13 +610,6 @@
     window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
   }
 })();
-</script>
-<!-- Farcaster Mini App SDK: 読込完了をクライアントへ通知しスプラッシュを閉じる（通常ブラウザ/オフラインでは無害にスキップ） -->
-<script type="module">
-  try {
-    const { sdk } = await import("https://esm.sh/@farcaster/miniapp-sdk");
-    await sdk.actions.ready();
-  } catch (e) { /* Farcaster外では何もしない */ }
 </script>
 </body>
 </html>
