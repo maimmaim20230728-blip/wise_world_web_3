@@ -9,7 +9,7 @@
  * すべて合成なので容量はほぼ変わりません（音声ファイル0個）。
  *
  *   WiseAudio.unlock() / startBGM('title'|'play') / stopBGM()
- *   WiseAudio.sfx('tap'|'correct'|'wrong'|'exp'|'levelup'|'levelbig'|'fanfare')
+ *   WiseAudio.sfx('tap'|'correct'|'wrong'|'exp'|'levelup'|'levelbig'|'levelmega'|'fanfare')
  *   WiseAudio.toggleMute() / isMuted() / setMuted(bool) / state()
  * ----------------------------------------------------------------------------
  */
@@ -234,13 +234,22 @@ window.WiseAudio = (function(){
         play(N.G5,t+0.24,0.14,{type:"triangle",peak:0.42,target:sfxGain});
         play(N.C6,t+0.36,0.32,{type:"triangle",peak:0.5,target:sfxGain});
         play(N.G5,t+0.36,0.32,{type:"sine",peak:0.2,target:sfxGain}); break;
-      case "levelbig": // 10の倍数：明るいファンファーレ＋最後に和音
+      case "levelbig": // 5の倍数（10除く）：明るいファンファーレ＋最後に和音
         play(N.G5,t,0.12,{type:"triangle",peak:0.42,target:sfxGain});
         play(N.C6,t+0.11,0.12,{type:"triangle",peak:0.44,target:sfxGain});
         play(N.E6,t+0.22,0.12,{type:"triangle",peak:0.46,target:sfxGain});
         play(N.C6,t+0.34,0.45,{type:"triangle",peak:0.46,target:sfxGain});
         play(N.E6,t+0.34,0.45,{type:"triangle",peak:0.34,target:sfxGain});
         play(N.G5,t+0.34,0.45,{type:"sine",peak:0.22,target:sfxGain}); break;
+      case "levelmega": // 10の倍数：levelbigより1段豪華な上昇フレーズ＋厚い和音
+        play(N.C5,t,0.11,{type:"triangle",peak:0.42,target:sfxGain});
+        play(N.E5,t+0.10,0.11,{type:"triangle",peak:0.42,target:sfxGain});
+        play(N.G5,t+0.20,0.11,{type:"triangle",peak:0.44,target:sfxGain});
+        play(N.C6,t+0.30,0.11,{type:"triangle",peak:0.46,target:sfxGain});
+        play(N.E6,t+0.42,0.52,{type:"triangle",peak:0.46,target:sfxGain});
+        play(N.C6,t+0.42,0.52,{type:"triangle",peak:0.32,target:sfxGain});
+        play(N.G5,t+0.42,0.52,{type:"sine",peak:0.24,target:sfxGain});
+        play(N.C5,t+0.42,0.52,{type:"sine",peak:0.18,target:sfxGain}); break;
       case "fanfare": // 99到達：勝利のファンファーレ（上昇＋大きな和音×2）
         play(N.C5,t,0.13,{type:"triangle",peak:0.42,target:sfxGain});
         play(N.E5,t+0.11,0.13,{type:"triangle",peak:0.42,target:sfxGain});

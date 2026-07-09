@@ -164,11 +164,17 @@
   .confetti{position:absolute; top:-12px; width:9px; height:14px; border-radius:2px; animation:fall linear infinite;}
   @keyframes fall{to{transform:translateY(360px) rotate(360deg); opacity:0;}}
   .lu-msg{display:none; margin:2px 0 14px; font-size:14.5px; line-height:1.55; font-weight:700; color:var(--ink-soft);}
-  /* 5の倍数：通常より派手（金系の背景・大きめのスパーク/レベル） */
+  /* 5の倍数（10除く：5/15/25…）：通常より派手（金系の背景・大きめのスパーク/レベル） */
   .levelup.milestone{background:linear-gradient(165deg,#fff7e6,#e8f9ef);}
   .levelup.milestone .spark{font-size:62px;}
   .levelup.milestone h2{color:var(--brand); font-size:27px;}
   .levelup.milestone .newlv{font-size:50px;}
+  /* 10の倍数（10/20/30…）：milestoneより1段派手（金グロー＋金グラデのレベル数字） */
+  .levelup.decade{background:linear-gradient(160deg,#fff3d6,#e8f9ef); animation:pop2 .45s cubic-bezier(.2,1.3,.4,1), decadeGlow 1.6s ease-in-out infinite;}
+  @keyframes decadeGlow{0%,100%{box-shadow:0 0 0 2px rgba(242,167,59,.30), var(--shadow);} 50%{box-shadow:0 0 24px 5px rgba(242,167,59,.55), var(--shadow);}}
+  .levelup.decade .spark{font-size:66px;}
+  .levelup.decade h2{color:var(--brand); font-size:28px;}
+  .levelup.decade .newlv{font-size:52px; background:linear-gradient(90deg,#f2a73b,#e0a020,#f7c46a,#f2a73b); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation:hue 2.6s linear infinite;}
   .levelup.finale{background:linear-gradient(165deg,#fff7e6,#ffe9f2);}
   .levelup.finale .spark{font-size:66px; animation:spin 3s linear infinite;}
   .levelup.finale h2{font-size:24px; font-weight:800; background:linear-gradient(90deg,#e0524d,#f2a73b,#15a35a,#5bb5e0,#9b5be0,#e0524d); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation:hue 3s linear infinite;}
@@ -298,7 +304,7 @@
 (function(){
   "use strict";
 
-  var EXP_PER_LEVEL=100, EXP_CORRECT=25, EXP_WRONG=20, READ_LOCK_MS=5000, MAX_LEVEL=99;
+  var EXP_PER_LEVEL=100, EXP_CORRECT=30, EXP_WRONG=25, READ_LOCK_MS=5000, MAX_LEVEL=99;
   var STORAGE_KEY="wiseworld3.save.v1", LANG_KEY="wiseworld3.lang.v1";
   var LABELS=["A","B","C","D"];
 
@@ -537,32 +543,35 @@
     }, STEP);
   }
 
-  /* ---- level up（通常=控えめ / 5の倍数=派手 / 99=ド派手フィナーレ）---- */
+  /* ---- level up（通常=控えめ / 5の倍数=派手 / 10の倍数=さらに派手 / 99=ド派手フィナーレ）---- */
   function celebrateLevelUp(level, done){
     // どのレベルアップでも必ずポップ（紙吹雪＋サウンド）を出す。段階で派手さを変える。
     if(level>=MAX_LEVEL){ showLevelUp("finale", level, done); return; }   // 99：最高
-    if(level%5===0){ showLevelUp("milestone", level, done); return; }    // 5の倍数：さらに派手
+    if(level%10===0){ showLevelUp("decade", level, done); return; }       // 10の倍数：milestoneより派手
+    if(level%5===0){ showLevelUp("milestone", level, done); return; }    // 5の倍数（10除く）：派手
     showLevelUp("normal", level, done);                                   // 通常
   }
   function showLevelUp(type, level, done){
     resolveAfterOverlay=done;
     var box=el("levelup-box");
-    var finale=(type==="finale"), milestone=(type==="milestone");
+    var finale=(type==="finale"), decade=(type==="decade"), milestone=(type==="milestone");
     box.classList.toggle("finale", finale);
+    box.classList.toggle("decade", decade);
     box.classList.toggle("milestone", milestone);
-    el("lu-spark").textContent=finale?"🏆":(milestone?"🎉":"✨");
+    el("lu-spark").textContent=finale?"🏆":(decade?"🎊":(milestone?"🎉":"✨"));
     el("lu-title").textContent=finale?t("congrats"):t("levelUp");
     el("lu-lv").textContent=level;
     el("lu-msg").textContent=finale?t("maxReached"):"";
     el("lu-ok").textContent=t("levelUpOk");
-    // サウンドも段階的に豪華に（通常→5の倍数→99）
-    WiseAudio && WiseAudio.sfx(finale?"fanfare":(milestone?"levelbig":"levelup"));
+    // サウンドも段階的に豪華に（通常→5の倍数→10の倍数→99）
+    WiseAudio && WiseAudio.sfx(finale?"fanfare":(decade?"levelmega":(milestone?"levelbig":"levelup")));
     box.querySelectorAll(".confetti").forEach(function(c){ c.remove(); });
     var colors=["#f2a73b","#1f8a70","#e0524d","#5bb5e0","#9b5be0","#f7c46a","#15a35a"];
-    var n=finale?50:(milestone?36:22);
+    var n=finale?50:(decade?44:(milestone?36:22));
+    var delayMax=finale?1.0:(decade?0.85:0.6);
     for(var i=0;i<n;i++){ var c=document.createElement("span"); c.className="confetti";
       c.style.left=(Math.random()*100)+"%"; c.style.background=colors[i%colors.length];
-      c.style.animationDuration=(1.5+Math.random()*1.7)+"s"; c.style.animationDelay=(Math.random()*(finale?1.0:0.6))+"s"; box.appendChild(c); }
+      c.style.animationDuration=(1.5+Math.random()*1.7)+"s"; c.style.animationDelay=(Math.random()*delayMax)+"s"; box.appendChild(c); }
     el("levelup-overlay").classList.add("show");
   }
   function dismissLevelUp(){ el("levelup-overlay").classList.remove("show"); var r=resolveAfterOverlay; resolveAfterOverlay=null; r&&r(); }
