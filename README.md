@@ -21,4 +21,4 @@
 
 ---
 
-アプリ開発：介護と支援の相談どころ「そよぎ」 https://soyogi.hp.peraichi.com/top
+アプリ開発：介護と支援の相談どころ「そよぎ」 https://soudansoyogi.com/
