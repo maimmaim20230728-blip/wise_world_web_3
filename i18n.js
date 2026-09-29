@@ -10,6 +10,7 @@
  * dir は文字方向。アラビア語など右→左の言語は "rtl"。
  * reviewNote は「AI翻訳・要確認」の注記（原語=日本語は null）。
  * 文中の {n} は数字に置き換わります。
+ * guide は「はじめての あそびかた」（初回の案内）。本文の {start} などは、その言語の画面の文字に置き換わります。
  * ----------------------------------------------------------------------------
  */
 window.WISE_WORLD_I18N = {
@@ -63,7 +64,30 @@ window.WISE_WORLD_I18N = {
       maxReached:"さいこうレベル たっせい！ すごい！",
       chooseLang:"ことばを えらぶ",
       credit:"アプリ開発：介護と支援の相談どころ　そよぎ",
-      reviewNote:null
+      reviewNote:null,
+      /* はじめての あそびかた（初回の案内・2026-09-30）。本文の {start} などは、index.html の guideFill が その言語の画面の文字(t(key))に置き換える */
+      guide:{
+        title:"あそびかた", step:"{n} / {m}", prev:"まえ", next:"つぎ", start:"あそぶ",
+        again:"あそびかたを もういちど みる",
+        heads:[
+          "{app} へ ようこそ",
+          "クイズの はじめかた",
+          "こたえかた",
+          "かいせつを よむ",
+          "レベルと EXP",
+          "やめるとき・きろく",
+          "ことばと おと"
+        ],
+        bodies:[
+          "{app} は、いきる ための ちしきを、4つの こたえから 1つを えらぶ クイズで まなぶ アプリです。\nもんだいは ぜんぶで {qn}もん。どの もんだいにも、こたえた あとに かいせつが あります。\nことばは この うえで えらべます。",
+          "ホームの「{start}」を おすと、ぜんぶの ぶもんから もんだいが でます。\n「{catMode}」を おすと、{ncat}つの ぶもんから 1つを えらんで、その ぶもんだけを まなべます。\nぶもんの がめんから ホームに もどるときは、うえの ✕ を おします。",
+          "もんだいを よんで、A・B・C・D の 4つから こたえを 1つ えらんで おします。\nこたえの ならびは まいかい かわります。\nつづけて とけば、ぜんぶ おわるまで おなじ もんだいは でません。",
+          "こたえると「{correct}」か「{wrong}」が でて、かいせつの がめんに なります。\nかいせつを さいごまで よむと（すこし まつ じかんも あります）、「{nextReady}」が おせるように なります。\nおすと EXP が もらえます。せいかいは +{expOk} EXP、まちがえても +{expNg} EXP です。",
+          "EXP が {lvExp} たまると、レベルが 1つ あがります。「{levelUpOk}」を おすと、つぎの もんだいへ すすみます。\nレベルは {maxLv} まで あります。\nいまの レベルと EXP は、ホームで みられます。",
+          "とちゅうで やめるときは、もんだいの がめんの うえの ✕ を おします。レベルと EXP は のこります。\nきろくは この たんまつの なかだけに のこり、どこにも おくられません。\nホームの したの「{reset}」で、レベルと EXP を さいしょに もどせます（たしかめの まどが でます）。",
+          "がめんの うえの 🌐 で、ことばを えらべます（{nlang}の ことば）。\n🔊 で、おんがくと こうかおんを けしたり だしたり できます（けしている ときは 🔇 に なります）。\nこの あそびかたは、ホームの したの「{again}」を おすと、いつでも みられます。"
+        ]
+      }
     },
     en: {
       langName:"English",
@@ -98,7 +122,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"You reached the highest level!",
       chooseLang:"Choose language",
       credit:"Developed by Soyogi — Care & Support Consultation",
-      reviewNote:"AI-assisted translation."
+      reviewNote:"AI-assisted translation.",
+      guide:{
+        title:"How to play", step:"{n} / {m}", prev:"Previous", next:"Next", start:"Play",
+        again:"Show how to play again",
+        heads:[
+          "Welcome to {app}",
+          "Starting a quiz",
+          "Answering",
+          "Reading the explanation",
+          "Levels and EXP",
+          "Stopping and your record",
+          "Language and sound"
+        ],
+        bodies:[
+          "{app} is an app for learning knowledge for life through quizzes where you pick one of four answers.\nThere are {qn} questions in all, and every question has an explanation after you answer.\nYou can choose the language above.",
+          "Tap \"{start}\" on the home screen to get questions from all categories.\nTap \"{catMode}\" to pick one of the {ncat} categories and study only that category.\nTo go back to the home screen from the category screen, tap ✕ at the top.",
+          "Read the question and tap one answer out of A, B, C and D.\nThe order of the answers changes every time.\nIf you keep going, the same question does not come up again until you have done them all.",
+          "When you answer, \"{correct}\" or \"{wrong}\" appears, and the explanation screen opens.\nWhen you have read the explanation to the end (there is also a short wait), you can tap \"{nextReady}\".\nTapping it gives you EXP: +{expOk} EXP for a correct answer, and +{expNg} EXP even for a wrong one.",
+          "Every {lvExp} EXP raises your level by 1. Tap \"{levelUpOk}\" to go on to the next question.\nLevels go up to {maxLv}.\nYou can see your current level and EXP on the home screen.",
+          "To stop in the middle, tap ✕ at the top of the question screen. Your level and EXP are kept.\nYour record stays only on this device and is not sent anywhere.\n\"{reset}\" at the bottom of the home screen puts your level and EXP back to the start (you will be asked to confirm).",
+          "Choose the language with 🌐 at the top of the screen ({nlang} languages).\nTurn the music and sound effects off or on with 🔊 (it shows 🔇 while the sound is off).\nTo see this guide again, tap \"{again}\" at the bottom of the home screen at any time."
+        ]
+      }
     },
     es: {
       langName:"Español",
@@ -133,7 +179,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"¡Llegaste al nivel máximo!",
       chooseLang:"Elegir idioma",
       credit:"Desarrollado por Soyogi — Consultas de cuidado y apoyo",
-      reviewNote:"Traducción asistida por IA."
+      reviewNote:"Traducción asistida por IA.",
+      guide:{
+        title:"Cómo jugar", step:"{n} / {m}", prev:"Anterior", next:"Siguiente", start:"Jugar",
+        again:"Ver de nuevo cómo jugar",
+        heads:[
+          "Te damos la bienvenida a {app}",
+          "Cómo empezar un quiz",
+          "Cómo responder",
+          "Lee la explicación",
+          "Niveles y EXP",
+          "Parar y tu progreso",
+          "Idioma y sonido"
+        ],
+        bodies:[
+          "{app} es una app para aprender conocimientos para la vida con quizzes en los que eliges una de cuatro respuestas.\nHay {qn} preguntas en total, y cada pregunta tiene una explicación después de responder.\nPuedes elegir el idioma aquí arriba.",
+          "Toca «{start}» en la pantalla de inicio para recibir preguntas de todas las categorías.\nToca «{catMode}» para elegir una de las {ncat} categorías y estudiar solo esa categoría.\nPara volver a la pantalla de inicio desde la pantalla de categorías, toca ✕ arriba.",
+          "Lee la pregunta y toca una respuesta entre A, B, C y D.\nEl orden de las respuestas cambia cada vez.\nSi sigues respondiendo, no se repite ninguna pregunta hasta que las hayas hecho todas.",
+          "Al responder aparece «{correct}» o «{wrong}», y se abre la pantalla de la explicación.\nCuando leas la explicación hasta el final (también hay una breve espera), podrás tocar «{nextReady}».\nAl tocarlo ganas EXP: +{expOk} EXP si aciertas y +{expNg} EXP aunque te equivoques.",
+          "Cada {lvExp} EXP subes 1 nivel. Toca «{levelUpOk}» para pasar a la siguiente pregunta.\nLos niveles llegan hasta el {maxLv}.\nPuedes ver tu nivel y tus EXP actuales en la pantalla de inicio.",
+          "Para parar a mitad, toca ✕ arriba en la pantalla de la pregunta. Tu nivel y tus EXP se conservan.\nTu progreso se guarda solo en este dispositivo y no se envía a ningún sitio.\nCon «{reset}», abajo en la pantalla de inicio, tu nivel y tus EXP vuelven al principio (se te pedirá confirmar).",
+          "Elige el idioma con 🌐 arriba en la pantalla ({nlang} idiomas).\nActiva o desactiva la música y los efectos de sonido con 🔊 (muestra 🔇 cuando el sonido está apagado).\nPara ver esta guía otra vez, toca «{again}» abajo en la pantalla de inicio cuando quieras."
+        ]
+      }
     },
     fr: {
       langName:"Français",
@@ -168,7 +236,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"Tu as atteint le niveau maximum !",
       chooseLang:"Choisir la langue",
       credit:"Développé par Soyogi — Consultations de soins et de soutien",
-      reviewNote:"Traduction assistée par IA."
+      reviewNote:"Traduction assistée par IA.",
+      guide:{
+        title:"Comment jouer", step:"{n} / {m}", prev:"Précédent", next:"Suivant", start:"Jouer",
+        again:"Revoir comment jouer",
+        heads:[
+          "Bienvenue dans {app}",
+          "Commencer un quiz",
+          "Répondre",
+          "Lire l'explication",
+          "Niveaux et EXP",
+          "Arrêter et ta progression",
+          "Langue et son"
+        ],
+        bodies:[
+          "{app} est une appli pour apprendre des connaissances utiles pour la vie avec des quiz où tu choisis une réponse parmi quatre.\nIl y a {qn} questions en tout, et chaque question a une explication après ta réponse.\nTu peux choisir la langue ci-dessus.",
+          "Touche « {start} » sur l'écran d'accueil pour recevoir des questions de toutes les catégories.\nTouche « {catMode} » pour choisir l'une des {ncat} catégories et n'étudier que celle-ci.\nPour revenir à l'écran d'accueil depuis l'écran des catégories, touche ✕ en haut.",
+          "Lis la question et touche une réponse parmi A, B, C et D.\nL'ordre des réponses change à chaque fois.\nSi tu continues, la même question ne revient pas avant que tu les aies toutes faites.",
+          "Quand tu réponds, « {correct} » ou « {wrong} » s'affiche, puis l'écran d'explication s'ouvre.\nQuand tu as lu l'explication jusqu'au bout (il y a aussi une courte attente), tu peux toucher « {nextReady} ».\nEn le touchant, tu gagnes des EXP : +{expOk} EXP pour une bonne réponse et +{expNg} EXP même pour une erreur.",
+          "Tous les {lvExp} EXP, ton niveau monte de 1. Touche « {levelUpOk} » pour passer à la question suivante.\nLes niveaux vont jusqu'à {maxLv}.\nTu peux voir ton niveau et tes EXP actuels sur l'écran d'accueil.",
+          "Pour arrêter en cours de route, touche ✕ en haut de l'écran de la question. Ton niveau et tes EXP sont conservés.\nTa progression reste uniquement sur cet appareil et n'est envoyée nulle part.\n« {reset} », en bas de l'écran d'accueil, remet ton niveau et tes EXP au départ (une confirmation te sera demandée).",
+          "Choisis la langue avec 🌐 en haut de l'écran ({nlang} langues).\nActive ou coupe la musique et les effets sonores avec 🔊 (🔇 s'affiche quand le son est coupé).\nPour revoir ce guide, touche « {again} » en bas de l'écran d'accueil, quand tu veux."
+        ]
+      }
     },
     pt: {
       langName:"Português",
@@ -203,7 +293,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"Você chegou ao nível máximo!",
       chooseLang:"Escolher idioma",
       credit:"Desenvolvido pela Soyogi — Consultoria de cuidado e apoio",
-      reviewNote:"Tradução assistida por IA."
+      reviewNote:"Tradução assistida por IA.",
+      guide:{
+        title:"Como jogar", step:"{n} / {m}", prev:"Anterior", next:"Próximo", start:"Jogar",
+        again:"Ver de novo como jogar",
+        heads:[
+          "Boas-vindas ao {app}",
+          "Como começar um quiz",
+          "Como responder",
+          "Leia a explicação",
+          "Níveis e EXP",
+          "Parar e seu progresso",
+          "Idioma e som"
+        ],
+        bodies:[
+          "{app} é um app para aprender conhecimentos para a vida com quizzes em que você escolhe uma entre quatro respostas.\nSão {qn} perguntas no total, e cada pergunta tem uma explicação depois da resposta.\nVocê pode escolher o idioma aqui em cima.",
+          "Toque em \"{start}\" na tela inicial para receber perguntas de todas as categorias.\nToque em \"{catMode}\" para escolher uma das {ncat} categorias e estudar só essa categoria.\nPara voltar à tela inicial a partir da tela de categorias, toque em ✕ no alto.",
+          "Leia a pergunta e toque em uma resposta entre A, B, C e D.\nA ordem das respostas muda a cada vez.\nSe você continuar respondendo, a mesma pergunta não se repete até que você tenha feito todas.",
+          "Ao responder, aparece \"{correct}\" ou \"{wrong}\", e a tela de explicação se abre.\nDepois de ler a explicação até o fim (também há uma pequena espera), você pode tocar em \"{nextReady}\".\nAo tocar, você ganha EXP: +{expOk} EXP se acertar e +{expNg} EXP mesmo se errar.",
+          "A cada {lvExp} EXP, seu nível sobe 1. Toque em \"{levelUpOk}\" para ir para a próxima pergunta.\nOs níveis vão até {maxLv}.\nVocê pode ver seu nível e seus EXP atuais na tela inicial.",
+          "Para parar no meio, toque em ✕ no alto da tela da pergunta. Seu nível e seus EXP continuam guardados.\nSeu progresso fica só neste aparelho e não é enviado para lugar nenhum.\n\"{reset}\", na parte de baixo da tela inicial, volta seu nível e seus EXP ao começo (será pedida uma confirmação).",
+          "Escolha o idioma com 🌐 no alto da tela ({nlang} idiomas).\nLigue ou desligue a música e os efeitos sonoros com 🔊 (aparece 🔇 quando o som está desligado).\nPara ver este guia de novo, toque em \"{again}\" na parte de baixo da tela inicial quando quiser."
+        ]
+      }
     },
     id: {
       langName:"Bahasa Indonesia",
@@ -238,7 +350,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"Kamu mencapai level tertinggi!",
       chooseLang:"Pilih bahasa",
       credit:"Dikembangkan oleh Soyogi — Konsultasi perawatan & dukungan",
-      reviewNote:"Diterjemahkan dengan bantuan AI."
+      reviewNote:"Diterjemahkan dengan bantuan AI.",
+      guide:{
+        title:"Cara bermain", step:"{n} / {m}", prev:"Kembali", next:"Lanjut", start:"Main",
+        again:"Lihat lagi cara bermain",
+        heads:[
+          "Selamat datang di {app}",
+          "Cara memulai kuis",
+          "Cara menjawab",
+          "Membaca penjelasan",
+          "Level dan EXP",
+          "Berhenti dan catatanmu",
+          "Bahasa dan suara"
+        ],
+        bodies:[
+          "{app} adalah aplikasi untuk mempelajari pengetahuan untuk hidup lewat kuis dengan memilih satu dari empat jawaban.\nAda {qn} soal semuanya, dan setiap soal punya penjelasan setelah kamu menjawab.\nKamu bisa memilih bahasa di atas.",
+          "Ketuk \"{start}\" di layar awal untuk mendapat soal dari semua kategori.\nKetuk \"{catMode}\" untuk memilih salah satu dari {ncat} kategori dan belajar kategori itu saja.\nUntuk kembali ke layar awal dari layar kategori, ketuk ✕ di atas.",
+          "Baca soalnya, lalu ketuk satu jawaban dari A, B, C, dan D.\nUrutan jawaban berubah setiap kali.\nKalau kamu terus menjawab, soal yang sama tidak muncul lagi sampai semuanya selesai.",
+          "Setelah menjawab, muncul \"{correct}\" atau \"{wrong}\", lalu layar penjelasan terbuka.\nSetelah kamu membaca penjelasan sampai habis (ada juga sedikit waktu tunggu), kamu bisa mengetuk \"{nextReady}\".\nDengan mengetuknya kamu mendapat EXP: +{expOk} EXP kalau benar, dan +{expNg} EXP walaupun salah.",
+          "Setiap {lvExp} EXP, level-mu naik 1. Ketuk \"{levelUpOk}\" untuk lanjut ke soal berikutnya.\nLevel bisa naik sampai {maxLv}.\nLevel dan EXP-mu sekarang bisa dilihat di layar awal.",
+          "Untuk berhenti di tengah jalan, ketuk ✕ di atas layar soal. Level dan EXP-mu tetap tersimpan.\nCatatanmu hanya tersimpan di perangkat ini dan tidak dikirim ke mana pun.\n\"{reset}\" di bagian bawah layar awal mengembalikan level dan EXP-mu ke awal (kamu akan diminta memastikan).",
+          "Pilih bahasa dengan 🌐 di bagian atas layar ({nlang} bahasa).\nNyalakan atau matikan musik dan efek suara dengan 🔊 (muncul 🔇 saat suara mati).\nUntuk melihat panduan ini lagi, ketuk \"{again}\" di bagian bawah layar awal kapan saja."
+        ]
+      }
     },
     ar: {
       langName:"العربية",
@@ -273,7 +407,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"وصلت إلى أعلى مستوى!",
       chooseLang:"اختر اللغة",
       credit:"تطوير: سويوغي — استشارات الرعاية والدعم",
-      reviewNote:"ترجمة بمساعدة الذكاء الاصطناعي."
+      reviewNote:"ترجمة بمساعدة الذكاء الاصطناعي.",
+      guide:{
+        title:"طريقة اللعب", step:"{n} / {m}", prev:"السابق", next:"التالي", start:"العب",
+        again:"عرض طريقة اللعب مرة أخرى",
+        heads:[
+          "مرحبًا بك في {app}",
+          "كيف تبدأ الاختبار",
+          "كيف تجيب",
+          "اقرأ الشرح",
+          "المستويات ونقاط EXP",
+          "التوقف وسجلّك",
+          "اللغة والصوت"
+        ],
+        bodies:[
+          "{app} تطبيق لتعلّم معارف مفيدة للحياة من خلال اختبارات تختار فيها إجابة واحدة من أربع.\nعدد الأسئلة في المجموع: {qn}، ولكل سؤال شرح بعد أن تجيب.\nيمكنك اختيار اللغة في الأعلى.",
+          "اضغط «{start}» في شاشة البداية لتظهر لك أسئلة من كل الفئات.\nاضغط «{catMode}» لتختار فئة واحدة من {ncat} فئات وتتعلّم تلك الفئة وحدها.\nللعودة إلى شاشة البداية من شاشة الفئات، اضغط ✕ في الأعلى.",
+          "اقرأ السؤال واضغط إجابة واحدة من A و B و C و D.\nيتغيّر ترتيب الإجابات في كل مرة.\nإذا واصلت الإجابة، فلن يتكرر السؤال نفسه حتى تنتهي من كل الأسئلة.",
+          "عندما تجيب يظهر «{correct}» أو «{wrong}»، ثم تُفتح شاشة الشرح.\nبعد أن تقرأ الشرح حتى النهاية (وهناك أيضًا انتظار قصير)، يمكنك الضغط على «{nextReady}».\nعند الضغط عليه تحصل على EXP: +{expOk} EXP للإجابة الصحيحة، و+{expNg} EXP حتى لو أخطأت.",
+          "كلما جمعت {lvExp} EXP يرتفع مستواك درجة واحدة. اضغط «{levelUpOk}» للانتقال إلى السؤال التالي.\nتصل المستويات حتى {maxLv}.\nيمكنك رؤية مستواك ونقاط EXP الحالية في شاشة البداية.",
+          "للتوقف في منتصف الطريق، اضغط ✕ في أعلى شاشة السؤال. يبقى مستواك ونقاط EXP كما هي.\nيُحفظ سجلّك على هذا الجهاز فقط ولا يُرسَل إلى أي مكان.\n«{reset}» في أسفل شاشة البداية يعيد مستواك ونقاط EXP إلى البداية (سيُطلب منك التأكيد).",
+          "اختر اللغة بزر 🌐 في أعلى الشاشة ({nlang} لغة).\nشغّل الموسيقى والمؤثرات الصوتية أو أوقفها بزر 🔊 (يظهر 🔇 عندما يكون الصوت متوقفًا).\nلعرض هذا الدليل مرة أخرى، اضغط «{again}» في أسفل شاشة البداية في أي وقت."
+        ]
+      }
     },
     zh: {
       langName:"中文",
@@ -308,7 +464,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"你达到了最高等级！",
       chooseLang:"选择语言",
       credit:"开发：介护与支援咨询处 Soyogi",
-      reviewNote:"AI 辅助翻译。"
+      reviewNote:"AI 辅助翻译。",
+      guide:{
+        title:"玩法说明", step:"{n} / {m}", prev:"上一页", next:"下一页", start:"开始玩",
+        again:"再看一次玩法说明",
+        heads:[
+          "欢迎来到 {app}",
+          "如何开始测验",
+          "如何作答",
+          "阅读解说",
+          "等级与 EXP",
+          "中途停止与记录",
+          "语言与声音"
+        ],
+        bodies:[
+          "{app} 是一款通过四选一测验来学习生活知识的应用。\n共有 {qn} 道题，每道题作答后都有解说。\n可以在上方选择语言。",
+          "在开始界面点击「{start}」，会出现所有类别的题目。\n点击「{catMode}」，可以从 {ncat} 个类别中选一个，只学习这个类别。\n在类别界面点击上方的 ✕，可以回到开始界面。",
+          "读完题目后，从 A、B、C、D 四个答案中点击一个。\n答案的顺序每次都会变化。\n连续作答时，在全部答完之前不会出现重复的题目。",
+          "作答后会显示「{correct}」或「{wrong}」，然后打开解说界面。\n把解说读到最后（也需要稍等片刻），就可以点击「{nextReady}」。\n点击后可获得 EXP：答对 +{expOk} EXP，答错也有 +{expNg} EXP。",
+          "每累积 {lvExp} EXP，等级就会提升 1 级。点击「{levelUpOk}」进入下一题。\n等级最高到 {maxLv}。\n在开始界面可以查看当前的等级和 EXP。",
+          "想中途停止时，点击题目界面上方的 ✕。等级和 EXP 会保留。\n记录只保存在这台设备里，不会发送到任何地方。\n开始界面下方的「{reset}」可以把等级和 EXP 恢复到最初（会先请你确认）。",
+          "用界面上方的 🌐 选择语言（共 {nlang} 种）。\n用 🔊 打开或关闭音乐和音效（关闭时显示 🔇）。\n想再看这份说明，随时点击开始界面下方的「{again}」。"
+        ]
+      }
     },
     ru: {
       langName:"Русский",
@@ -343,7 +521,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"Ты достиг максимального уровня!",
       chooseLang:"Выбрать язык",
       credit:"Разработано Soyogi — консультации по уходу и поддержке",
-      reviewNote:"Перевод с помощью ИИ."
+      reviewNote:"Перевод с помощью ИИ.",
+      guide:{
+        title:"Как играть", step:"{n} / {m}", prev:"Назад", next:"Далее", start:"Играть",
+        again:"Посмотреть, как играть, ещё раз",
+        heads:[
+          "Добро пожаловать в {app}",
+          "Как начать викторину",
+          "Как отвечать",
+          "Читай объяснение",
+          "Уровни и EXP",
+          "Остановка и прогресс",
+          "Язык и звук"
+        ],
+        bodies:[
+          "В {app} ты узнаёшь полезное для жизни с помощью викторины, где нужно выбрать один ответ из четырёх.\nВсего вопросов: {qn}. После каждого ответа есть объяснение.\nЯзык можно выбрать вверху.",
+          "Нажми «{start}» на начальном экране, чтобы получать вопросы из всех категорий.\nНажми «{catMode}», чтобы выбрать одну из {ncat} категорий и учить только её.\nЧтобы вернуться на начальный экран из экрана категорий, нажми ✕ вверху.",
+          "Прочитай вопрос и нажми один ответ из A, B, C и D.\nПорядок ответов каждый раз меняется.\nЕсли отвечать подряд, один и тот же вопрос не повторится, пока не пройдёшь все.",
+          "Когда ответишь, появится «{correct}» или «{wrong}», и откроется экран с объяснением.\nКогда дочитаешь объяснение до конца (есть и короткое ожидание), можно будет нажать «{nextReady}».\nЗа это ты получаешь EXP: +{expOk} EXP за правильный ответ и +{expNg} EXP даже за ошибку.",
+          "Каждые {lvExp} EXP повышают уровень на 1. Нажми «{levelUpOk}», чтобы перейти к следующему вопросу.\nМаксимальный уровень: {maxLv}.\nТекущий уровень и EXP видны на начальном экране.",
+          "Чтобы остановиться посередине, нажми ✕ вверху экрана с вопросом. Уровень и EXP сохранятся.\nТвой прогресс хранится только на этом устройстве и никуда не отправляется.\nКнопка «{reset}» внизу начального экрана возвращает уровень и EXP к началу (сначала нужно будет подтвердить).",
+          "Выбери язык кнопкой 🌐 вверху экрана (языков: {nlang}).\nВключай и выключай музыку и звуковые эффекты кнопкой 🔊 (когда звук выключен, видно 🔇).\nЧтобы снова посмотреть это руководство, нажми «{again}» внизу начального экрана в любой момент."
+        ]
+      }
     },
     hi: {
       langName:"हिन्दी",
@@ -378,7 +578,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"आपने सर्वोच्च स्तर पा लिया!",
       chooseLang:"भाषा चुनें",
       credit:"विकसित: देखभाल और सहायता परामर्श केंद्र Soyogi",
-      reviewNote:"AI की मदद से किया गया अनुवाद।"
+      reviewNote:"AI की मदद से किया गया अनुवाद।",
+      guide:{
+        title:"कैसे खेलें", step:"{n} / {m}", prev:"पिछला", next:"अगला", start:"खेलें",
+        again:"कैसे खेलें, फिर से देखें",
+        heads:[
+          "{app} में आपका स्वागत है",
+          "क्विज़ कैसे शुरू करें",
+          "जवाब कैसे दें",
+          "व्याख्या पढ़ें",
+          "स्तर और EXP",
+          "रुकना और आपका रिकॉर्ड",
+          "भाषा और आवाज़"
+        ],
+        bodies:[
+          "{app} एक ऐप है, जिसमें आप चार जवाबों में से एक चुनने वाली क्विज़ से जीवन के लिए उपयोगी ज्ञान सीखते हैं।\nकुल {qn} प्रश्न हैं, और हर प्रश्न का जवाब देने के बाद उसकी व्याख्या आती है।\nभाषा आप ऊपर चुन सकते हैं।",
+          "शुरुआती स्क्रीन पर \"{start}\" दबाएँ, तो सभी श्रेणियों से प्रश्न आएँगे।\n\"{catMode}\" दबाकर आप {ncat} श्रेणियों में से एक चुन सकते हैं और सिर्फ़ उसी श्रेणी को सीख सकते हैं।\nश्रेणी वाली स्क्रीन से शुरुआती स्क्रीन पर लौटने के लिए ऊपर ✕ दबाएँ।",
+          "प्रश्न पढ़ें और A, B, C, D में से एक जवाब दबाएँ।\nजवाबों का क्रम हर बार बदलता है।\nलगातार जवाब देते रहें, तो सभी प्रश्न पूरे होने तक वही प्रश्न दोबारा नहीं आएगा।",
+          "जवाब देने पर \"{correct}\" या \"{wrong}\" दिखता है, फिर व्याख्या की स्क्रीन खुलती है।\nव्याख्या अंत तक पढ़ने पर (थोड़ा इंतज़ार भी करना होता है) आप \"{nextReady}\" दबा सकते हैं।\nइसे दबाने पर EXP मिलते हैं: सही जवाब पर +{expOk} EXP, और गलत होने पर भी +{expNg} EXP।",
+          "हर {lvExp} EXP पर आपका स्तर 1 बढ़ता है। अगले प्रश्न पर जाने के लिए \"{levelUpOk}\" दबाएँ।\nस्तर {maxLv} तक हैं।\nअपना अभी का स्तर और EXP आप शुरुआती स्क्रीन पर देख सकते हैं।",
+          "बीच में रुकना हो, तो प्रश्न वाली स्क्रीन के ऊपर ✕ दबाएँ। आपका स्तर और EXP बने रहते हैं।\nआपका रिकॉर्ड सिर्फ़ इसी डिवाइस में रहता है और कहीं नहीं भेजा जाता।\nशुरुआती स्क्रीन के नीचे \"{reset}\" से आपका स्तर और EXP फिर से शुरू से हो जाते हैं (पहले पुष्टि पूछी जाएगी)।",
+          "स्क्रीन के ऊपर 🌐 से भाषा चुनें ({nlang} भाषाएँ)।\n🔊 से संगीत और ध्वनि प्रभाव चालू या बंद करें (आवाज़ बंद होने पर 🔇 दिखता है)।\nयह गाइड फिर से देखने के लिए, शुरुआती स्क्रीन के नीचे \"{again}\" कभी भी दबाएँ।"
+        ]
+      }
     },
     bn: {
       langName:"বাংলা",
@@ -413,7 +635,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"তুমি সর্বোচ্চ লেভেলে পৌঁছেছ!",
       chooseLang:"ভাষা বেছে নাও",
       credit:"তৈরি: যত্ন ও সহায়তা পরামর্শকেন্দ্র Soyogi",
-      reviewNote:"AI-এর সাহায্যে অনূদিত।"
+      reviewNote:"AI-এর সাহায্যে অনূদিত।",
+      guide:{
+        title:"কীভাবে খেলবে", step:"{n} / {m}", prev:"আগের", next:"পরের", start:"খেলো",
+        again:"কীভাবে খেলবে, আবার দেখো",
+        heads:[
+          "{app}-এ স্বাগতম",
+          "কুইজ কীভাবে শুরু করবে",
+          "কীভাবে উত্তর দেবে",
+          "ব্যাখ্যা পড়ো",
+          "লেভেল ও EXP",
+          "থামা ও তোমার রেকর্ড",
+          "ভাষা ও শব্দ"
+        ],
+        bodies:[
+          "{app} এমন একটি অ্যাপ, যেখানে চারটি উত্তরের মধ্যে একটি বেছে নেওয়ার কুইজ দিয়ে জীবনের জন্য দরকারি জ্ঞান শেখা যায়।\nমোট {qn}টি প্রশ্ন আছে, আর প্রতিটি প্রশ্নের উত্তরের পরে ব্যাখ্যা আছে।\nভাষা ওপরে বেছে নিতে পারো।",
+          "শুরুর পর্দায় \"{start}\" চাপলে সব বিভাগ থেকে প্রশ্ন আসবে।\n\"{catMode}\" চাপলে {ncat}টি বিভাগ থেকে একটি বেছে নিয়ে শুধু সেই বিভাগটি শিখতে পারবে।\nবিভাগের পর্দা থেকে শুরুর পর্দায় ফিরতে ওপরের ✕ চাপো।",
+          "প্রশ্নটি পড়ে A, B, C, D থেকে একটি উত্তর চাপো।\nউত্তরগুলোর ক্রম প্রতিবার বদলায়।\nটানা উত্তর দিতে থাকলে সব প্রশ্ন শেষ না হওয়া পর্যন্ত একই প্রশ্ন আর আসবে না।",
+          "উত্তর দিলে \"{correct}\" বা \"{wrong}\" দেখা যায়, তারপর ব্যাখ্যার পর্দা খোলে।\nব্যাখ্যা শেষ পর্যন্ত পড়লে (একটু অপেক্ষাও করতে হয়) \"{nextReady}\" চাপতে পারবে।\nচাপলে EXP পাবে: সঠিক উত্তরে +{expOk} EXP, আর ভুল হলেও +{expNg} EXP।",
+          "প্রতি {lvExp} EXP-তে তোমার লেভেল 1 বাড়ে। পরের প্রশ্নে যেতে \"{levelUpOk}\" চাপো।\nলেভেল {maxLv} পর্যন্ত আছে।\nএখনকার লেভেল আর EXP শুরুর পর্দায় দেখা যায়।",
+          "মাঝপথে থামতে চাইলে প্রশ্নের পর্দার ওপরের ✕ চাপো। তোমার লেভেল আর EXP থেকে যায়।\nতোমার রেকর্ড শুধু এই ডিভাইসেই থাকে, কোথাও পাঠানো হয় না।\nশুরুর পর্দার নিচের \"{reset}\" দিয়ে লেভেল আর EXP একদম শুরুতে ফিরিয়ে নিতে পারো (আগে নিশ্চিত করতে বলা হবে)।",
+          "পর্দার ওপরের 🌐 দিয়ে ভাষা বেছে নাও ({nlang}টি ভাষা)।\n🔊 দিয়ে গান আর সাউন্ড ইফেক্ট চালু বা বন্ধ করো (শব্দ বন্ধ থাকলে 🔇 দেখায়)।\nএই নির্দেশিকা আবার দেখতে শুরুর পর্দার নিচের \"{again}\" যেকোনো সময় চাপো।"
+        ]
+      }
     },
     sw: {
       langName:"Kiswahili",
@@ -448,7 +692,29 @@ window.WISE_WORLD_I18N = {
       maxReached:"Umefika ngazi ya juu zaidi!",
       chooseLang:"Chagua lugha",
       credit:"Imetengenezwa na Soyogi — ushauri wa malezi na msaada",
-      reviewNote:"Imetafsiriwa kwa msaada wa AI."
+      reviewNote:"Imetafsiriwa kwa msaada wa AI.",
+      guide:{
+        title:"Jinsi ya kucheza", step:"{n} / {m}", prev:"Nyuma", next:"Mbele", start:"Cheza",
+        again:"Tazama tena jinsi ya kucheza",
+        heads:[
+          "Karibu kwenye {app}",
+          "Jinsi ya kuanza jaribio",
+          "Jinsi ya kujibu",
+          "Soma maelezo",
+          "Ngazi na EXP",
+          "Kusimama na rekodi yako",
+          "Lugha na sauti"
+        ],
+        bodies:[
+          "{app} ni programu ya kujifunza maarifa ya maisha kwa majaribio ambapo unachagua jibu moja kati ya manne.\nKuna maswali {qn} kwa jumla, na kila swali lina maelezo baada ya kujibu.\nUnaweza kuchagua lugha hapo juu.",
+          "Gusa \"{start}\" kwenye skrini ya mwanzo ili upate maswali kutoka makundi yote.\nGusa \"{catMode}\" ili uchague kundi moja kati ya makundi {ncat} na ujifunze kundi hilo tu.\nIli urudi kwenye skrini ya mwanzo kutoka skrini ya makundi, gusa ✕ juu.",
+          "Soma swali, kisha gusa jibu moja kati ya A, B, C na D.\nMpangilio wa majibu hubadilika kila mara.\nUkiendelea kujibu mfululizo, swali lile lile halitarudi mpaka umemaliza yote.",
+          "Ukijibu, \"{correct}\" au \"{wrong}\" huonekana, kisha skrini ya maelezo hufunguka.\nUkisoma maelezo hadi mwisho (pia kuna muda mfupi wa kusubiri), unaweza kugusa \"{nextReady}\".\nUkiligusa unapata EXP: +{expOk} EXP kwa jibu sahihi, na +{expNg} EXP hata ukikosea.",
+          "Kila EXP {lvExp} hupandisha ngazi yako kwa 1. Gusa \"{levelUpOk}\" ili uende kwenye swali linalofuata.\nNgazi zinafika hadi {maxLv}.\nNgazi na EXP zako za sasa zinaonekana kwenye skrini ya mwanzo.",
+          "Ili usimame katikati, gusa ✕ juu ya skrini ya swali. Ngazi na EXP zako hubaki.\nRekodi yako inabaki kwenye kifaa hiki tu na haitumwi popote.\n\"{reset}\" chini ya skrini ya mwanzo hurudisha ngazi na EXP zako mwanzoni (utaombwa kuthibitisha).",
+          "Chagua lugha kwa 🌐 juu ya skrini (lugha {nlang}).\nWasha au zima muziki na sauti za athari kwa 🔊 (🔇 huonekana sauti ikiwa imezimwa).\nIli uone mwongozo huu tena, gusa \"{again}\" chini ya skrini ya mwanzo wakati wowote."
+        ]
+      }
     }
   }
 };

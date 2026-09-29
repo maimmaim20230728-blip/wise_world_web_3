@@ -209,6 +209,33 @@
   .ask-row .btn{flex:1 1 0; min-height:54px; padding:12px 10px;}
   .ask-no{background:var(--card); color:var(--brand-dark); border:2px solid var(--brand);}
 
+  /* ============ はじめての あそびかた（初回の案内・2026-09-30）============
+     全画面（上の 🌐🔊 z40 より上・たしかめの窓 z50 より下）。1ページずつ「まえ / つぎ」、とじるのは さいごの「あそぶ」だけ（×は置かない）。
+     下のボタンは 地の色つきの帯（長いページでも本文が すけない）。本文の下の余白は 帯の高さ＋24px を JS で入れる */
+  .guide-ov{position:fixed; inset:0; z-index:45; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    background:linear-gradient(165deg,var(--bg1),var(--bg2));
+    padding:calc(16px + env(safe-area-inset-top)) 16px calc(120px + env(safe-area-inset-bottom)); animation:fade .25s ease;}
+  .guide-box{max-width:540px; margin:0 auto; background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:18px 18px 22px;}
+  .guide-top{display:flex; justify-content:space-between; align-items:baseline; gap:12px;}
+  .guide-title{margin:0; font-size:17px; font-weight:800; color:var(--brand-dark); overflow-wrap:anywhere;}
+  .guide-step{margin:0; font-size:14px; font-weight:700; color:var(--ink-soft); white-space:nowrap; unicode-bidi:isolate;}
+  .guide-lang{display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; margin:14px 0 0; padding:12px 14px; background:var(--brand-soft); border-radius:14px;}
+  .guide-lang-lbl{font-size:15px; font-weight:800; color:var(--brand-dark);}
+  .guide-lang select{flex:1 1 160px; min-width:0; max-width:100%; min-height:46px; font-size:16px; font-weight:700; font-family:inherit; color:var(--ink);
+    background:#fff; border:2px solid var(--brand); border-radius:12px; padding:4px 10px;}
+  .guide-h{margin:18px 0 10px; font-size:21px; line-height:1.5; font-weight:800; color:var(--brand-dark); word-break:keep-all; overflow-wrap:anywhere;}
+  .guide-p{margin:0; font-size:17px; line-height:1.9; white-space:pre-line; word-break:keep-all; overflow-wrap:anywhere;}
+  html[lang="zh"] .guide-h, html[lang="zh"] .guide-p{word-break:normal;}
+  .guide-dots{display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin:22px 0 0;}
+  .guide-dot{width:10px; height:10px; border-radius:50%; background:var(--line);}
+  .guide-dot.on{background:var(--brand);}
+  .guide-row{position:fixed; z-index:46; left:0; right:0; bottom:0; background:var(--card); border-top:1px solid var(--line); box-shadow:0 -4px 14px rgba(31,45,51,.08);
+    padding:10px max(16px, env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));}
+  .guide-row-in{display:flex; gap:10px; max-width:540px; margin:0 auto;}
+  .guide-row .btn{flex:1 1 0; min-width:0; min-height:60px; padding:12px 10px; overflow-wrap:anywhere;}
+  .guide-prev{background:var(--card); color:var(--brand-dark); border:2px solid var(--brand);}
+  .guide-link{display:block; margin:0 auto 4px;}
+
   /* ============ ふりがな（日本語の総ルビ）============ */
   ruby{ruby-position:over; ruby-align:center;}
   rt{font-size:.56em; font-weight:600; color:var(--ink-soft); letter-spacing:0; user-select:none;}
@@ -260,6 +287,7 @@
     </div>
 
     <div class="home-foot">
+      <button class="linkbtn guide-link" id="guide-btn">?</button>
       <button class="linkbtn" id="reset-btn">reset</button>
       <p class="review-note" id="review-note"></p>
       <a class="credit" id="credit-link" href="https://soudansoyogi.com/" target="_blank" rel="noopener noreferrer"></a>
@@ -431,6 +459,9 @@
     el("credit-link").textContent=t("credit");
     var note=(I18N.ui[lang]||{}).reviewNote, nEl=el("review-note");
     if(note){ nEl.textContent=note; nEl.style.display="block"; } else { nEl.style.display="none"; }
+    el("guide-btn").textContent=gtx("again");
+    var gd=document.querySelector(".guide-ov");
+    if(gd && gd._draw) gd._draw();   // はじめての あそびかた も いまの ページのまま訳し直す
   }
   function buildLangList(){
     var box=el("lang-list"); box.innerHTML="";
@@ -660,6 +691,106 @@
     });
   }
 
+  /* ---- はじめての あそびかた（初回の案内・2026-09-30） ----
+     ヒロさん「ひとつずつ・そよぎ みたいなタイプのアプリは、必ず最初に使い方の丁寧な説明を出してほしい。10代の情報室のように」。
+     ・初回に必ず出す（さいごの ページの「あそぶ」を おすまで、ひらくたびに出る）。読みおえたら GUIDE_KEY="1"
+     ・1ページずつ「まえ / つぎ」。とじるのは さいごの「あそぶ」だけ（×は置かない）。ページ番号（1 / 7）と点
+     ・ことばは i18n.js の guide（title / step / prev / next / start / again / heads[] / bodies[]）。
+       本文の {start} などは、その言語の画面の文字 t(key) を そのまま入れる（ボタン名が画面と ずれない）。{app}{qn} などは guideFill の vars
+     ・1ページ目に ことばを えらぶ所（上の 🌐 が案内に かくれるため・同じ12の ことば）。えらぶと案内も その ことばに なる
+     ・戻るボタン（Play版）: 2ページ目から=まえの ページ／1ページ目=初回なら後ろに下げる（とじない）、ホームの「もういちど みる」から開いたときは とじる
+     ・初回は 案内の あいだ BGM を はじめない。タイトルの BGM は「あそぶ」で案内を とじたときに はじまる（ふだんの自動再生の決まりは そのまま）
+     ・Web版も同じ（戻るはブラウザのまま） */
+  var GUIDE_KEY=STORAGE_KEY.replace(".save.v1", ".guide.v1");
+  var APP_NAME=document.title||"Wise World";
+  var GUIDE_UI=["start","catMode","reset","nextReady","levelUpOk","correct","wrong","chooseLang"];
+  function guideDone(){ try{ return localStorage.getItem(GUIDE_KEY)==="1"; }catch(e){ return false; } }
+  function gtx(key){
+    var g=(I18N.ui[lang]||{}).guide, e=(I18N.ui.en||{}).guide;
+    var v=g ? g[key] : null;
+    if(v==null && e) v=e[key];
+    return v==null ? "" : v;
+  }
+  function guideFill(s){
+    var qn=0; CATS.forEach(function(c){ qn+=c.to-c.from+1; });
+    var vars={ app:APP_NAME, qn:qn, ncat:CATS.length, expOk:EXP_CORRECT, expNg:EXP_WRONG, lvExp:EXP_PER_LEVEL,
+      maxLv:MAX_LEVEL, nlang:I18N.langs.length, again:gtx("again") };
+    return String(s==null?"":s).replace(/\{(\w+)\}/g, function(m, k){
+      if(Object.prototype.hasOwnProperty.call(vars, k)) return String(vars[k]);
+      if(GUIDE_UI.indexOf(k)>=0) return t(k);
+      return m;
+    });
+  }
+  function openGuide(first){
+    if(document.querySelector(".guide-ov")) return;   // もう開いていれば開かない（二重に出さない）
+    var b0=gtx("bodies");
+    if(!Array.isArray(b0) || !b0.length) return;
+    var i=0;
+    var mk=function(tag, cls){ var e=document.createElement(tag); if(cls) e.className=cls; return e; };
+    var ov=mk("div","guide-ov"); ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true");
+    var box=mk("div","guide-box");
+    var top=mk("div","guide-top"), ttl=mk("p","guide-title"), step=mk("p","guide-step");
+    step.setAttribute("dir","ltr");   // 「1 / 7」は右から左の ことばでも左から（ar で「7 / 1」に見えないように）
+    top.appendChild(ttl); top.appendChild(step);
+    var langRow=mk("div","guide-lang"), langLbl=mk("label","guide-lang-lbl"), langSel=mk("select","");
+    langSel.id="guide-lang-sel"; langLbl.setAttribute("for","guide-lang-sel");
+    I18N.langs.forEach(function(l){ var o=document.createElement("option"); o.value=l.code; o.textContent=l.native; langSel.appendChild(o); });
+    langSel.addEventListener("change", function(){
+      WiseAudio&&WiseAudio.sfx("tap");
+      if(langSel.value!==lang) setLang(langSel.value);   // ことばの窓（🌐）と同じ。読みこみが おわると applyI18n が もう一度 draw する
+      draw();
+    });
+    langRow.appendChild(langLbl); langRow.appendChild(langSel);
+    var h=mk("h2","guide-h"), p=mk("p","guide-p"), dots=mk("div","guide-dots");
+    dots.setAttribute("aria-hidden","true");
+    var row=mk("div","guide-row"), rowIn=mk("div","guide-row-in");
+    var prevB=mk("button","btn guide-prev"), nextB=mk("button","btn btn-primary guide-next");
+    prevB.type="button"; nextB.type="button";
+    rowIn.appendChild(prevB); rowIn.appendChild(nextB); row.appendChild(rowIn);
+    box.appendChild(top); box.appendChild(langRow); box.appendChild(h); box.appendChild(p); box.appendChild(dots);
+    ov.appendChild(box); ov.appendChild(row);
+    function fitPad(){ ov.style.paddingBottom="calc("+(row.offsetHeight+24)+"px + env(safe-area-inset-bottom))"; }
+    function draw(){
+      var heads=gtx("heads"), bodies=gtx("bodies"), n=bodies.length;
+      if(i>n-1) i=n-1;
+      ov.setAttribute("aria-label", gtx("title"));
+      ttl.textContent="🦉 "+gtx("title");
+      step.textContent=String(gtx("step")).replace("{n}", i+1).replace("{m}", n);
+      langRow.style.display=(i===0)?"":"none";
+      langLbl.textContent="🌐 "+t("chooseLang");
+      langSel.value=lang;
+      h.textContent=guideFill(heads[i]);
+      p.textContent=guideFill(bodies[i]);
+      dots.innerHTML="";
+      for(var k=0;k<n;k++){ dots.appendChild(mk("span","guide-dot"+(k===i?" on":""))); }
+      prevB.textContent=gtx("prev");
+      prevB.style.visibility=(i===0)?"hidden":"visible";   // 「つぎ」の位置を かえない
+      nextB.textContent=(i===n-1)?gtx("start"):gtx("next");
+      ov.scrollTop=0;
+      fitPad();
+    }
+    function close(){
+      if(ov.parentNode) ov.parentNode.removeChild(ov);
+      window.removeEventListener("resize", fitPad);
+      try{ localStorage.setItem(GUIDE_KEY, "1"); }catch(e){}
+      if(first) autoStartBgm();   // 初回: タイトルの BGM は 案内を とじてから
+    }
+    ov._draw=draw;
+    ov._back=function(){
+      if(i>0){ i--; draw(); return; }
+      if(first) minimizeApp(); else close();
+    };
+    prevB.addEventListener("click", function(){ if(i>0){ WiseAudio&&WiseAudio.sfx("tap"); i--; draw(); } });
+    nextB.addEventListener("click", function(){
+      WiseAudio&&WiseAudio.sfx("tap");
+      if(i<gtx("bodies").length-1){ i++; draw(); } else close();
+    });
+    document.body.appendChild(ov);
+    draw();
+    window.addEventListener("resize", fitPad);
+    try{ nextB.focus({ preventScroll:true }); }catch(e){}
+  }
+
   /* ---- Google Play版(Capacitor)だけ：たしかめの窓・Android の戻るボタン（2026-09-30） ----
      ・Play版の window.confirm は、Capacitor がボタンを英語の OK / Cancel に決め打ちしている。
        Play版だけ、アプリの中に「いいえ / はい」の窓を出す（ことばは i18n の no / yes）。Web版は今までどおり window.confirm。
@@ -712,6 +843,8 @@
   function onBack(){
     var ask=document.querySelector(".ask-ov");
     if(ask){ if(typeof ask._back==="function") ask._back(); return; }
+    var gd=document.querySelector(".guide-ov");   // はじめての あそびかた: まえの ページ／1ページ目は 初回なら後ろに下げる・もういちど みる なら とじる
+    if(gd){ if(typeof gd._back==="function") gd._back(); return; }
     if(el("lang-overlay").classList.contains("show")){ el("lang-close").click(); return; }
     if(el("levelup-overlay").classList.contains("show")){ el("lu-ok").click(); return; }
     if(currentScreen==="cats"){ el("cats-home").click(); return; }
@@ -746,6 +879,7 @@
   // ✕でタイトルへ＝いま遊んでいたモードのデッキだけリセット（部門モードならその部門の1巡をリセット）
   el("quiz-home").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); setRem([]); state.cat=null; save(); renderHome(); show("home"); });
   el("reset-btn").addEventListener("click", resetProgress);
+  el("guide-btn").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); openGuide(false); });
   nextBtn.addEventListener("click", function(){ if(nextBtn.disabled) return; WiseAudio&&WiseAudio.sfx("tap"); earnThenAdvance(); });
   el("lu-ok").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); dismissLevelUp(); });
   el("lang-btn").addEventListener("click", function(e){ e.stopPropagation(); WiseAudio&&WiseAudio.unlock(); refreshMuteIcon(); buildLangList(); el("lang-overlay").classList.add("show"); });
@@ -766,7 +900,8 @@
   buildBubbles(); refreshMuteIcon(); load();
   lang=pickInitialLang();
   setLang(lang);   // questionsを読み込み→applyI18n→renderHome
-  autoStartBgm();  // タイトルで自動BGM（許可されていれば即時／不可なら最初の操作で）
+  if(guideDone()) autoStartBgm();  // タイトルで自動BGM（許可されていれば即時／不可なら最初の操作で）
+  else openGuide(true);            // はじめての あそびかた（読みおえるまで毎回・BGM は「あそぶ」で とじてから）
   watchBack();     // Android の戻るボタン（Google Play版だけ）
 
   if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
