@@ -201,6 +201,13 @@
   .lang-list{display:flex; flex-direction:column; gap:10px; margin-bottom:14px; max-height:55vh; overflow-y:auto;}
   .lang-item{padding:13px; border-radius:12px; border:2px solid var(--line); background:#fff; font-size:17px; font-weight:700; font-family:inherit; cursor:pointer; color:var(--ink);}
   .lang-item.current{border-color:var(--brand); background:var(--brand-soft); color:var(--brand-dark);}
+  /* たしかめの窓（Google Play版だけ・window.confirm の代わり。ボタンが英語の OK / Cancel になるため）。上のボタン(🌐🔊)より上に出す */
+  .overlay.ask-ov{z-index:50;}
+  .ask-box{background:var(--card); border-radius:24px; box-shadow:var(--shadow); padding:24px 20px 20px; max-width:340px; width:100%; text-align:center; animation:pop2 .35s cubic-bezier(.2,1.3,.4,1);}
+  .ask-msg{margin:0 0 18px; font-size:17px; font-weight:700; line-height:1.6; color:var(--ink); word-break:keep-all; overflow-wrap:anywhere; white-space:pre-wrap;}
+  .ask-row{display:flex; gap:10px;}
+  .ask-row .btn{flex:1 1 0; min-height:54px; padding:12px 10px;}
+  .ask-no{background:var(--card); color:var(--brand-dark); border:2px solid var(--brand);}
 
   /* ============ ふりがな（日本語の総ルビ）============ */
   ruby{ruby-position:over; ruby-align:center;}
@@ -647,8 +654,81 @@
   function dismissLevelUp(){ el("levelup-overlay").classList.remove("show"); var r=resolveAfterOverlay; resolveAfterOverlay=null; r&&r(); }
 
   function resetProgress(){
-    if(!confirm(t("resetConfirm"))) return;
-    state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{} }; save(); renderHome();
+    askBox(t("resetConfirm"), function(ok){
+      if(!ok) return;
+      state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{} }; save(); renderHome();
+    });
+  }
+
+  /* ---- Google Play版(Capacitor)だけ：たしかめの窓・Android の戻るボタン（2026-09-30） ----
+     ・Play版の window.confirm は、Capacitor がボタンを英語の OK / Cancel に決め打ちしている。
+       Play版だけ、アプリの中に「いいえ / はい」の窓を出す（ことばは i18n の no / yes）。Web版は今までどおり window.confirm。
+     ・戻るボタン（@capacitor/app）：いちばん上の窓を閉じる（たしかめ=いいえ／ことば=×／レベルアップ=「やった！」）
+       → ぶもんの画面はホームへ（✕と同じ）→ クイズ・解説の画面は たしかめてからホームへ（✕と同じ）→ ホームはアプリを後ろに下げる。
+       こたえた直後・EXP を加えている間（画面が自動で進むあいだ）の戻るは何もしない。
+     ・Web版（ブラウザ）は何も変えない（戻るはブラウザのまま） */
+  function isNativeApp(){
+    try{ var c=window.Capacitor; return !!(c && typeof c.isNativePlatform==="function" && c.isNativePlatform()); }catch(e){ return false; }
+  }
+  function nativePlugin(name, fn){
+    try{
+      var c=window.Capacitor;
+      if(typeof c.isPluginAvailable==="function" && !c.isPluginAvailable(name)) return null;
+      var p=c.Plugins && c.Plugins[name];
+      return (p && typeof p[fn]==="function") ? p : null;
+    }catch(e){ return null; }
+  }
+  // done(true=はい / false=いいえ)。Web版は window.confirm の答えをその場で渡す。
+  function askBox(msg, done){
+    if(!isNativeApp()){
+      var r=false;
+      try{ r=!!window.confirm(msg); }catch(e){ r=false; }
+      done(r); return;
+    }
+    var ov=document.createElement("div"); ov.className="overlay show ask-ov";
+    ov.setAttribute("role","alertdialog"); ov.setAttribute("aria-modal","true");
+    var box=document.createElement("div"); box.className="ask-box";
+    var p=document.createElement("p"); p.className="ask-msg"; p.textContent=msg;
+    var row=document.createElement("div"); row.className="ask-row";
+    var no=document.createElement("button"); no.type="button"; no.className="btn ask-no"; no.textContent=t("no");
+    var yes=document.createElement("button"); yes.type="button"; yes.className="btn btn-primary ask-yes"; yes.textContent=t("yes");
+    var closed=false;
+    function close(v){ if(closed) return; closed=true; if(ov.parentNode) ov.parentNode.removeChild(ov); done(v); }
+    no.addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); close(false); });
+    yes.addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); close(true); });
+    ov._back=function(){ close(false); };   // 戻るボタン=いいえ
+    row.appendChild(no); row.appendChild(yes); box.appendChild(p); box.appendChild(row); ov.appendChild(box);
+    document.body.appendChild(ov);
+    try{ no.focus(); }catch(e){}
+  }
+  function minimizeApp(){
+    var ap=nativePlugin("App","minimizeApp");
+    try{ if(ap){ var r=ap.minimizeApp(); if(r && r.catch) r.catch(function(){}); } }catch(e){}
+  }
+  // 画面が自動で進むあいだ（こたえた直後 → 解説／EXP を加えている間 → 次の問題・レベルアップ）
+  function autoMoving(){
+    return (currentScreen==="quiz" && !!document.querySelector("#q-choices .choice.correct")) || (currentScreen==="result" && earning);
+  }
+  function onBack(){
+    var ask=document.querySelector(".ask-ov");
+    if(ask){ if(typeof ask._back==="function") ask._back(); return; }
+    if(el("lang-overlay").classList.contains("show")){ el("lang-close").click(); return; }
+    if(el("levelup-overlay").classList.contains("show")){ el("lu-ok").click(); return; }
+    if(currentScreen==="cats"){ el("cats-home").click(); return; }
+    if(currentScreen==="quiz" || currentScreen==="result"){
+      if(autoMoving()) return;
+      askBox(t("leaveConfirm"), function(ok){
+        if(ok && (currentScreen==="quiz" || currentScreen==="result") && !autoMoving()) el("quiz-home").click();
+      });
+      return;
+    }
+    minimizeApp();   // ホーム：アプリを後ろに下げる（中身はそのまま）
+  }
+  function watchBack(){
+    if(!isNativeApp()) return;
+    var ap=nativePlugin("App","addListener");
+    if(!ap) return;
+    try{ ap.addListener("backButton", function(){ onBack(); }); }catch(e){}
   }
   function refreshMuteIcon(){ el("mute-btn").textContent=WiseAudio && WiseAudio.isMuted() ? "🔇" : "🔊"; }
 
@@ -687,6 +767,7 @@
   lang=pickInitialLang();
   setLang(lang);   // questionsを読み込み→applyI18n→renderHome
   autoStartBgm();  // タイトルで自動BGM（許可されていれば即時／不可なら最初の操作で）
+  watchBack();     // Android の戻るボタン（Google Play版だけ）
 
   if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
