@@ -11,6 +11,7 @@
  *   WiseAudio.unlock() / startBGM('title'|'play') / stopBGM()
  *   WiseAudio.sfx('tap'|'correct'|'wrong'|'exp'|'levelup'|'levelbig'|'levelmega'|'fanfare')
  *   WiseAudio.toggleMute() / isMuted() / setMuted(bool) / state()
+ * 画面に出ていないあいだは止め、戻ったら続きから（2026-09-30・下の「画面に出ていないあいだは止める」）
  * ----------------------------------------------------------------------------
  */
 window.WiseAudio = (function(){
@@ -19,6 +20,8 @@ window.WiseAudio = (function(){
   var ctx=null, master=null, comp=null, bgmGain=null, sfxGain=null;
   var muted=false, started=false, noiseBuf=null;
   var bgmTimer=null, curTrack=null, bgmBus=null, pendingTrack=null;
+  var loopNext=0;                  // 次のループを置く時刻（ctx の時計）。画面に戻ったら、ここから続きを置く
+  var away=false, awayStop=false;  // 画面に出ていない／隠れたとき鳴っていたので止めた
   var MUTE_KEY="wiseworld3.muted.v1";
 
   var N={
@@ -81,7 +84,13 @@ window.WiseAudio = (function(){
     var AC=window.AudioContext||window.webkitAudioContext;
     if(!AC) return null;
     ctx=new AC();
-    ctx.onstatechange=function(){ if(ctx.state==="running" && pendingTrack){ var t=pendingTrack; pendingTrack=null; _startBGMNow(t); } };
+    ctx.onstatechange=function(){
+      if(ctx.state!=="running") return;
+      if(away){ awayStop=true; suspendCtx(); return; }   // 隠れているあいだに動き出したら（戻す途中で隠れた など）すぐ止め直す＝戻ったら続き
+      awayStop=false;
+      if(curTrack && !bgmTimer) armLoop(curTrack, (loopNext-ctx.currentTime)*1000-200);   // 止めていた曲の続き（次のループの予約を戻す）
+      if(pendingTrack){ var t=pendingTrack; pendingTrack=null; _startBGMNow(t); }
+    };
     master=ctx.createGain(); master.gain.value=muted?0:0.55;
     comp=ctx.createDynamicsCompressor();
     comp.threshold.value=-18; comp.knee.value=24; comp.ratio.value=3; comp.attack.value=0.004; comp.release.value=0.22;
@@ -95,7 +104,7 @@ window.WiseAudio = (function(){
     for(var i=0;i<len;i++) d[i]=Math.random()*2-1;
     return ctx;
   }
-  function unlock(){ if(!ensure()) return; if(ctx.state==="suspended") ctx.resume(); started=true; }
+  function unlock(){ if(!ensure()) return; if(away) comeBack(); if(ctx.state==="suspended") ctx.resume(); started=true; }
 
   /* ---- 1音（包絡線・任意でデチューン/ローパス/定位）---- */
   function play(freq, t, dur, o){
@@ -177,12 +186,22 @@ window.WiseAudio = (function(){
     var spec=TRACKS[name]; if(!spec) return;
     layTrack(spec, start);
     var loopDur=spec.bars.length*4*(60/spec.bpm);
-    bgmTimer=setTimeout(function(){ if(curTrack===name) scheduleLoop(name, start+loopDur); }, Math.max(80, loopDur*1000-200));
+    loopNext=start+loopDur;
+    armLoop(name, loopDur*1000-200);
+  }
+  // 次のループを置くタイマー。止めているあいだ（画面に出ていない）は先の分を積まない＝戻ったら onstatechange が続きから置き直す
+  function armLoop(name, ms){
+    bgmTimer=setTimeout(function(){
+      bgmTimer=null;
+      if(curTrack!==name || away || !ctx || ctx.state!=="running") return;
+      scheduleLoop(name, loopNext);
+    }, Math.max(80, ms));
   }
   function startBGM(name){
     if(!ensure()) return;
     // 自動再生制限などで未稼働のときは予約し、稼働になった瞬間(onstatechange)に再生する
-    if(ctx.state!=="running"){ pendingTrack=name; if(ctx.resume) ctx.resume(); return; }
+    // 画面に出ていないあいだは予約だけ（戻ったときに鳴らす）
+    if(ctx.state!=="running" || away){ pendingTrack=name; if(!away && ctx.resume) ctx.resume(); return; }
     _startBGMNow(name);
   }
   function _startBGMNow(name){
@@ -211,7 +230,7 @@ window.WiseAudio = (function(){
 
   /* ---- 効果音 ---- */
   function sfx(name){
-    if(!ensure() || muted) return;
+    if(away || !ensure() || muted) return;   // 画面に出ていないあいだは鳴らさない（止めた AudioContext を戻さない）
     if(ctx.state==="suspended") ctx.resume();
     var t=ctx.currentTime;
     switch(name){
@@ -272,6 +291,42 @@ window.WiseAudio = (function(){
     return muted;
   }
   function toggleMute(){ return setMuted(!muted); }
+
+  /* ---- 画面に出ていないあいだは止める（2026-09-30） ----
+     ・Google Play版(Capacitor)の Android は WebView を止めないので、ホームに戻っても・画面を消しても BGM が鳴り続けていた
+     ・隠れた（visibilitychange の hidden／pagehide／Play版は App の pause）ら AudioContext を止める（suspend）。先のループも積まない
+     ・戻った（visible／pageshow／App の resume）ら、止める前に鳴っていたときだけ戻す（resume）＝時計ごと止めたので、曲は止めた所から
+     ・音を切っている人には戻しても鳴らさない（🔊 で音を戻したときに unlock が続きを鳴らす）
+     ・タイトルで自動で鳴る決まりは そのまま
+     ・resume() はすぐには running にならない（返事を待つあいだは suspended のまま）。戻ってすぐ隠れたときも止められるよう、
+       awayStop は動き出したとき（onstatechange）に下ろし、隠れたときは返事待ちでも suspend する */
+  function suspendCtx(){ try{ var p=ctx.suspend(); if(p && p.catch) p.catch(function(){}); }catch(e){} }
+  function goAway(){
+    away=true;
+    if(!ctx) return;
+    if(ctx.state==="running") awayStop=true;
+    if(!awayStop) return;   // 隠れる前から止まっていた（音を切って戻った・自動再生の許可待ち）ならそのまま
+    if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer=null; }
+    suspendCtx();
+  }
+  function comeBack(){
+    away=false;
+    if(!awayStop || !ctx) return;
+    if(muted){ awayStop=false; return; }
+    try{ var p=ctx.resume(); if(p && p.catch) p.catch(function(){}); }catch(e){}
+  }
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") goAway(); else comeBack(); });
+  window.addEventListener("pagehide", goAway);
+  window.addEventListener("pageshow", function(){ if(document.visibilityState!=="hidden") comeBack(); });
+  try{
+    var cap=window.Capacitor, capApp=cap && cap.Plugins && cap.Plugins.App;
+    if(cap && typeof cap.isNativePlatform==="function" && cap.isNativePlatform() && capApp && typeof capApp.addListener==="function" &&
+       !(typeof cap.isPluginAvailable==="function" && !cap.isPluginAvailable("App"))){
+      [["pause", goAway], ["resume", comeBack]].forEach(function(a){
+        var r=capApp.addListener(a[0], function(){ a[1](); }); if(r && r.catch) r.catch(function(){});
+      });
+    }
+  }catch(e){}
 
   return {
     unlock:unlock, startBGM:startBGM, stopBGM:stopBGM, sfx:sfx,
