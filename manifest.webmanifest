@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "background_color": "#f1edfb",
   "theme_color": "#6c43c4",
-  "categories": ["education", "kids"],
+  "categories": ["education"],
   "icons": [
     {
       "src": "icons/icon.svg",

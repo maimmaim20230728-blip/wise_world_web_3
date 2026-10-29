@@ -115,6 +115,7 @@
     color:var(--brand-dark); border:2px solid var(--brand); border-radius:20px; cursor:pointer; font-weight:800;
     font-family:inherit; box-shadow:0 4px 12px rgba(31,45,51,.10);}
   .cat-btn:active{transform:scale(.97);}
+  .cat-btn[hidden]{display:none;}
   .cats-title{text-align:center; font-size:20px; font-weight:800; color:var(--brand-dark); margin:4px 0 14px;}
   .cat-list{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto;}
   .cat-item{display:flex; align-items:center; gap:12px; text-align:start; padding:14px 16px; background:var(--card);
@@ -246,6 +247,13 @@
   html[lang="ja"] .expl h3{line-height:1.9;}
   html[lang="ja"] .topic-tag{line-height:1.7;}
 
+  /* 読み上げソフトだけに伝える文字（正誤など）と、保存できなかったときの知らせ（2026-10-30） */
+  .sr-only{position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;}
+  .toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:60; max-width:calc(100% - 32px);
+    background:#1f2d33; color:#fff; font-size:15px; font-weight:700; line-height:1.5; padding:12px 18px; border-radius:14px; box-shadow:var(--shadow); text-align:center;
+    opacity:0; pointer-events:none; transition:opacity .25s;}
+  .toast.show{opacity:1;}
+
   @media (prefers-reduced-motion: reduce){
     .mascot,.qillust,.title,.title .w1,.title .w2,.title .w3,.start-btn,.start-btn::after,.sun,.cloud,.bubbles span{animation:none !important;}
   }
@@ -284,6 +292,7 @@
 
       <button class="start-btn" id="start-btn">▶</button>
       <button class="cat-btn" id="cat-btn">📚</button>
+      <button class="cat-btn" id="rev-btn" hidden>🔁</button>
     </div>
 
     <div class="home-foot">
@@ -358,6 +367,9 @@
     </div>
   </div>
 
+  <div class="sr-only" id="sr-live" aria-live="polite"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 </div>
 
 <script src="i18n.js"></script>
@@ -382,8 +394,10 @@
   var lang = "en";
   var QUESTIONS = [];
 
-  var state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{} };
+  // review=まちがえた もんだいの id（ひとまわり おわったときに まとめて入る）・revRem=その とき直しの のこり・roundMiss=いまの ひとまわりで まちがえた id（モードごと）
+  var state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{}, review:[], revRem:[], roundMiss:{} };
   var current=null, lockTimer=null, timerDone=false;
+  var answeredNow=false, toResultTimer=null, reviewMode=false;
   var pendingExp=0, earning=false, expAnimTimer=null, resolveAfterOverlay=null;
   var currentScreen="home";
 
@@ -407,10 +421,24 @@
       if(s){ if(typeof s.level==="number")state.level=s.level; if(typeof s.exp==="number")state.exp=s.exp;
         if(Array.isArray(s.remaining))state.remaining=s.remaining; if(typeof s.answered==="number")state.answered=s.answered;
         if(typeof s.cat==="number"&&CATS[s.cat])state.cat=s.cat;
-        if(s.catRem&&typeof s.catRem==="object"&&!Array.isArray(s.catRem))state.catRem=s.catRem; }
+        if(s.catRem&&typeof s.catRem==="object"&&!Array.isArray(s.catRem))state.catRem=s.catRem;
+        if(Array.isArray(s.review))state.review=s.review; if(Array.isArray(s.revRem))state.revRem=s.revRem;
+        if(s.roundMiss&&typeof s.roundMiss==="object"&&!Array.isArray(s.roundMiss))state.roundMiss=s.roundMiss; }
     }catch(e){}
   }
-  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+  // 保存できなかったら（容量・プライベートモードなど）その場で1回だけ知らせる
+  var saveWarned=false;
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e){ if(!saveWarned){ saveWarned=true; toast(t("saveFail")); } }
+  }
+  var toastTimer=null;
+  function toast(msg){
+    var tEl=el("toast"); if(!tEl) return;
+    tEl.textContent=msg; tEl.classList.add("show");
+    clearTimeout(toastTimer); toastTimer=setTimeout(function(){ tEl.classList.remove("show"); }, 3500);
+  }
+  function srSay(msg){ var s=el("sr-live"); if(!s) return; s.textContent=""; setTimeout(function(){ s.textContent=msg; }, 30); }
 
   /* ---- language ---- */
   function availLangs(){ return I18N.langs.map(function(l){ return l.code; }); }
@@ -491,8 +519,19 @@
     el("home-need").textContent=EXP_PER_LEVEL;
     el("home-hint").textContent=atMax?t("maxReached"):t("toNext", EXP_PER_LEVEL-state.exp);
     updateQuizPill();
+    renderReviewBtn();
     var pct=atMax?100:Math.max(0, Math.min(100,(state.exp/EXP_PER_LEVEL)*100));
     requestAnimationFrame(function(){ el("home-bar").style.width=pct+"%"; });
+  }
+  // まちがえた もんだいの入口：ひとまわり おわって、まちがえた もんだいが あるときだけ出す
+  function reviewIds(){
+    var ids=QUESTIONS.map(function(q){ return q.id; });
+    return state.review.filter(function(id){ return ids.indexOf(id)>=0; });
+  }
+  function renderReviewBtn(){
+    var b=el("rev-btn"), n=reviewIds().length;
+    b.hidden=(n===0);
+    b.textContent=t("reviewBtn", n);
   }
 
   /* ---- categories（部門べつモード） ---- */
@@ -518,13 +557,16 @@
   function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
   // 部門べつモード：state.cat=null なら全問、番号なら CATS[番号] のidレンジだけが出題プール。
   // 部門ごとに別デッキ(state.catRem)を持つ＝部門を行き来しても、それぞれ1巡の続きから再開できる。
+  // まちがえた もんだいの とき直し（reviewMode）は state.review の id だけが プール。のこりは state.revRem。
   function activePool(){
+    if(reviewMode){ var rv=reviewIds(); return QUESTIONS.filter(function(q){ return rv.indexOf(q.id)>=0; }); }
     if(state.cat==null) return QUESTIONS;
     var c=CATS[state.cat];
     return QUESTIONS.filter(function(q){ return q.id>=c.from && q.id<=c.to; });
   }
-  function getRem(){ return (state.cat==null ? state.remaining : state.catRem[state.cat]) || []; }
-  function setRem(a){ if(state.cat==null){ state.remaining=a; } else { state.catRem[state.cat]=a; } }
+  function getRem(){ return (reviewMode ? state.revRem : (state.cat==null ? state.remaining : state.catRem[state.cat])) || []; }
+  function setRem(a){ if(reviewMode){ state.revRem=a; } else if(state.cat==null){ state.remaining=a; } else { state.catRem[state.cat]=a; } }
+  function missKey(){ return state.cat==null ? "all" : String(state.cat); }
   // 出題デッキを作り直す（プール全問シャッフル）。直前の問題が先頭に来たら末尾へ回し、境界での即連続repeatも防ぐ。
   function rebuildDeck(excludeId){
     var ids=shuffle(activePool().map(function(q){ return q.id; }));
@@ -545,7 +587,13 @@
 
   /* ---- quiz ---- */
   function startQuiz(){
+    if(reviewMode){
+      // とき直しは ひとまわりで おわり（同じ もんだいを くりかえさない）。のこりが なければ ホームへ
+      var rv=reviewIds();
+      if(!getRem().some(function(id){ return rv.indexOf(id)>=0; })){ reviewMode=false; renderHome(); show("home"); return; }
+    }
     if(activePool().length===0) return;
+    answeredNow=false;
     current=nextQuestion();
     updateQuizPill();
     setRich(el("q-topic"), current.topic||"");
@@ -565,8 +613,10 @@
     show("quiz");
   }
   function onAnswer(choiceIndex, btn){
+    if(answeredNow) return;   // こたえた あとは ほかの 選択肢を おしても 数えない（キーボード・読み上げソフトでも）
+    answeredNow=true;
     var buttons=document.querySelectorAll("#q-choices .choice");
-    buttons.forEach(function(b){ b.style.pointerEvents="none"; });
+    buttons.forEach(function(b){ b.style.pointerEvents="none"; b.setAttribute("aria-disabled","true"); });
     var correct=(choiceIndex===current.answerIndex);
     // 並べ替えに対応：data-orig で正解ボタンを探して色付け
     buttons.forEach(function(b){
@@ -578,8 +628,27 @@
     WiseAudio && WiseAudio.sfx(correct?"correct":"wrong");
     // EXPは解答時に入れない（読了後に加算）
     pendingExp=correct?EXP_CORRECT:EXP_WRONG;
-    state.answered+=1; save();
-    setTimeout(function(){ toResult(correct); }, 850);
+    state.answered+=1;
+    noteMiss(current.id, correct);
+    save();
+    srSay(correct?t("correct"):t("wrong"));
+    clearTimeout(toResultTimer);
+    toResultTimer=setTimeout(function(){ toResultTimer=null; if(currentScreen==="quiz") toResult(correct); }, 850);
+  }
+  // まちがえた もんだいの きろく。ふだんの モードでは ひとまわり おわったときに まとめて とき直しの入口へ入れる
+  // （「ぜんぶ おわるまで おなじ もんだいは でません」の とおり、ひとまわりの とちゅうでは もう一度 出さない）
+  function noteMiss(id, correct){
+    var i=state.review.indexOf(id);
+    if(correct && i>=0) state.review.splice(i,1);   // どこで せいかいしても とき直しから はずす
+    if(reviewMode) return;
+    var key=missKey(), m=state.roundMiss[key]||[];
+    if(!correct && m.indexOf(id)<0) m.push(id);
+    if(correct){ var j=m.indexOf(id); if(j>=0) m.splice(j,1); }
+    state.roundMiss[key]=m;
+    if(getRem().length===0){   // この こたえで ひとまわり おわり
+      m.forEach(function(x){ if(state.review.indexOf(x)<0) state.review.push(x); });
+      state.roundMiss[key]=[];
+    }
   }
 
   /* ---- result ---- */
@@ -687,7 +756,7 @@
   function resetProgress(){
     askBox(t("resetConfirm"), function(ok){
       if(!ok) return;
-      state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{} }; save(); renderHome();
+      state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{}, review:[], revRem:[], roundMiss:{} }; save(); renderHome();
     });
   }
 
@@ -876,8 +945,25 @@
   el("start-btn").addEventListener("click", function(){ if(WiseAudio){ WiseAudio.unlock(); WiseAudio.sfx("tap"); } state.cat=null; save(); startQuiz(); });
   el("cat-btn").addEventListener("click", function(){ if(WiseAudio){ WiseAudio.unlock(); WiseAudio.sfx("tap"); } renderCats(); show("cats"); });
   el("cats-home").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); renderHome(); show("home"); });
-  // ✕でタイトルへ＝いま遊んでいたモードのデッキだけリセット（部門モードならその部門の1巡をリセット）
-  el("quiz-home").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); setRem([]); state.cat=null; save(); renderHome(); show("home"); });
+  // まちがえた もんだいを とき直す（ひとまわり おわった あとに ホームに出る入口）
+  el("rev-btn").addEventListener("click", function(){
+    if(WiseAudio){ WiseAudio.unlock(); WiseAudio.sfx("tap"); }
+    if(reviewIds().length===0){ renderHome(); return; }
+    reviewMode=true;
+    var rv=reviewIds();
+    if(!state.revRem.some(function(id){ return rv.indexOf(id)>=0; })) state.revRem=shuffle(rv.slice());
+    save(); startQuiz();
+  });
+  // ✕でタイトルへ＝デッキ（解いてきた順番）は そのまま のこす。つぎに はじめると 続きから出る（2026-10-30）
+  // まだ こたえていない いまの もんだいは デッキの先頭に もどす（ひとまわりから消えないように）。こたえた直後なら 解説へは進まない
+  el("quiz-home").addEventListener("click", function(){
+    WiseAudio&&WiseAudio.sfx("tap");
+    clearTimeout(toResultTimer); toResultTimer=null;
+    if(currentScreen==="quiz" && current && !answeredNow){
+      var r=getRem(); if(r.indexOf(current.id)<0){ r.unshift(current.id); setRem(r); }
+    }
+    reviewMode=false; state.cat=null; save(); renderHome(); show("home");
+  });
   el("reset-btn").addEventListener("click", resetProgress);
   el("guide-btn").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); openGuide(false); });
   nextBtn.addEventListener("click", function(){ if(nextBtn.disabled) return; WiseAudio&&WiseAudio.sfx("tap"); earnThenAdvance(); });
