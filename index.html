@@ -59,13 +59,13 @@
   .btn-primary:active{background:var(--brand-dark);}
 
   /* top-center buttons: language + sound（中央上部に配置・右上のLV/もんめ表示と重ならない） */
-  .corner-btns{position:fixed; top:calc(10px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:40; display:flex; gap:12px;}
+  .corner-btns{position:fixed; top:calc(18px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:40; display:flex; gap:12px;}
   .corner-btns button{width:42px; height:42px; border-radius:50%; border:none; cursor:pointer;
     background:rgba(255,255,255,.9); box-shadow:var(--shadow-sm); font-size:19px; display:grid;
     place-items:center; backdrop-filter:blur(3px);}
   .corner-btns button:active{transform:scale(.92);}
   /* 中央上部のボタンと重ならないよう、クイズ/結果画面は上部に余白を確保 */
-  #quiz, #result{padding-top:calc(62px + env(safe-area-inset-top));}
+  #quiz, #result{padding-top:calc(70px + env(safe-area-inset-top));}
 
   /* ============ HOME ============ */
   #home{justify-content:safe center; text-align:center; gap:20px; overflow:hidden;}
