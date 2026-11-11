@@ -67,7 +67,7 @@
   .corner-btns button:active{transform:scale(.92);}
   .corner-btns button::after{content:""; position:absolute; top:-3px; right:-3px; bottom:-3px; left:-3px; border-radius:50%;}
   /* 中央上部のボタンと重ならないよう、クイズ/結果画面は上部に余白を確保 */
-  #quiz, #result{padding-top:calc(70px + env(safe-area-inset-top));}
+  #quiz, #result, #summary{padding-top:calc(70px + env(safe-area-inset-top));}
 
   /* ============ HOME ============ */
   #home{justify-content:safe center; text-align:center; gap:20px; overflow:hidden;}
@@ -127,10 +127,12 @@
   .cat-item .cemoji{font-size:28px; line-height:1;}
   .cat-item .cname{flex:1;}
   .cat-item .ccount{font-size:12px; color:var(--brand-dark); font-weight:700; opacity:.85; white-space:nowrap;}
+  .cat-item .cleft{display:block; margin-top:2px; font-size:12px; font-weight:700; color:var(--ink-soft); line-height:1.5;}
 
   /* ============ QUIZ ============ */
   .topic-tag{align-self:flex-start; background:var(--brand-soft); color:var(--brand-dark); font-weight:700; font-size:13px; padding:4px 12px; border-radius:999px; margin-bottom:10px;}
   .qillust{font-size:58px; text-align:center; line-height:1; margin:4px 0 12px; filter:drop-shadow(0 5px 8px rgba(31,45,51,.12)); animation:bob 2.6s ease-in-out infinite;}
+  .question:focus{outline:none;}
   .question{font-size:21px; font-weight:800; margin:0 0 18px; text-align:center; word-break:auto-phrase;}
   .choices{display:flex; flex-direction:column; gap:12px; margin-top:auto;}
   .choice{background:var(--card); color:var(--ink); text-align:left; border:2px solid var(--line); border-radius:14px;
@@ -169,6 +171,26 @@
   .mini-exp .bar{flex:1;}
   .mini-exp .bar>span{transition:width .12s linear;}
   .btn.locked{background:#cfd8d5; color:#7d8b87; box-shadow:none;}
+  .lock-hint{margin:0 0 8px; text-align:center; font-size:13px; font-weight:700; color:var(--ink-soft); line-height:1.5;}
+  .lock-hint[hidden]{display:none;}
+
+  /* ============ ひとまわり おわった画面（2026-11-11）============ */
+  #summary{align-items:center; text-align:center; gap:14px;}
+  .sum-emoji{font-size:54px; line-height:1;}
+  .sum-title{margin:0; font-size:22px; font-weight:800; color:var(--brand-dark); line-height:1.5;}
+  .sum-title:focus{outline:none;}
+  .sum-score{margin:0; font-size:34px; font-weight:800; color:var(--brand);}
+  .sum-score small{font-size:15px; font-weight:700; color:var(--ink-soft); margin-inline-start:6px;}
+  .sum-cats{display:flex; flex-direction:column; gap:10px; width:100%; max-width:420px;}
+  .sum-row{background:var(--card); border-radius:14px; box-shadow:var(--shadow-sm); padding:10px 14px; text-align:start;}
+  .sum-row-top{display:flex; align-items:center; gap:10px; font-weight:800; font-size:15px;}
+  .sum-row-top .cemoji{font-size:22px; line-height:1;}
+  .sum-row-top .cname{flex:1;}
+  .sum-row-top .cnum{font-size:14px; color:var(--brand-dark); white-space:nowrap; unicode-bidi:isolate;}
+  .sum-row .bar{height:10px; margin-top:6px;}
+  .sum-tag{display:inline-block; margin-top:5px; font-size:12px; font-weight:800; color:var(--brand-dark); background:var(--brand-soft); padding:2px 10px; border-radius:999px;}
+  .sum-btns{display:flex; flex-direction:column; gap:10px; width:100%; max-width:420px; margin-top:6px;}
+  .sum-home{background:var(--card); color:var(--brand-dark); border:2px solid var(--brand);}
 
   /* ============ overlays (level up / language) ============ */
   .overlay{position:fixed; inset:0; z-index:30; display:none; place-items:center; background:rgba(20,40,34,.55); backdrop-filter:blur(2px); padding:24px; animation:fade .25s ease;}
@@ -325,7 +347,7 @@
     </div>
     <div class="topic-tag" id="q-topic"></div>
     <div class="qillust" id="q-emoji">💧</div>
-    <h2 class="question" id="q-text"></h2>
+    <h2 class="question" id="q-text" tabindex="-1"></h2>
     <div class="choices" id="q-choices"></div>
   </section>
 
@@ -346,7 +368,20 @@
         <div class="bar"><span id="r-bar"></span></div>
       </div>
     </div>
+    <p class="lock-hint" id="lock-hint" hidden></p>
     <button class="btn locked" id="next-btn" disabled></button>
+  </section>
+
+  <!-- ============ SUMMARY（ひとまわり おわった画面） ============ -->
+  <section id="summary" class="screen">
+    <div class="sum-emoji" aria-hidden="true">🎉</div>
+    <h2 class="sum-title" id="sum-title" tabindex="-1"></h2>
+    <p class="sum-score"><span id="sum-ok" dir="ltr"></span><small id="sum-lbl"></small></p>
+    <div class="sum-cats" id="sum-cats"></div>
+    <div class="sum-btns">
+      <button class="btn btn-primary" id="sum-next"></button>
+      <button class="btn sum-home" id="sum-home"></button>
+    </div>
   </section>
 
   <!-- ============ LEVEL UP ============ -->
@@ -397,17 +432,27 @@
   var QUESTIONS = [];
 
   // review=まちがえた もんだいの id（ひとまわり おわったときに まとめて入る）・revRem=その とき直しの のこり・roundMiss=いまの ひとまわりで まちがえた id（モードごと）
-  var state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{}, review:[], revRem:[], roundMiss:{} };
+  var state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{}, review:[], revRem:[], roundMiss:{}, roundStat:{} };
+  var pendingRound=null, sumData=null;   // ひとまわり おわった画面に出す せいせき（正誤の個数だけ・この たんまつの なかだけ）
   var current=null, lockTimer=null, timerDone=false, lockRemaining=0;
   var answeredNow=false, toResultTimer=null, reviewMode=false;
   var pendingExp=0, earning=false, expAnimTimer=null, resolveAfterOverlay=null;
   var currentScreen="home";
 
   var el=function(id){ return document.getElementById(id); };
-  var screens={ home:el("home"), cats:el("cats"), quiz:el("quiz"), result:el("result") };
+  var screens={ home:el("home"), cats:el("cats"), quiz:el("quiz"), result:el("result"), summary:el("summary") };
   var explEl=el("expl"), nextBtn=el("next-btn"), scrollCue=el("scroll-cue");
   // 日本語はふりがな(<ruby>)を含むのでHTMLとして描画。他言語はテキスト描画（安全）。
   function setRich(elm, str){ if(lang==="ja"){ elm.innerHTML=str||""; } else { elm.textContent=str||""; } }
+
+  // 読み上げ用：日本語はふりがな(<ruby>)を ぬいた もじ。ほかの ことばは そのまま
+  function plain(str){
+    str=str||"";
+    if(lang!=="ja") return str;
+    var d=document.createElement("div"); d.innerHTML=str;
+    var rs=d.querySelectorAll("rt,rp"); for(var i=0;i<rs.length;i++){ rs[i].parentNode.removeChild(rs[i]); }
+    return d.textContent;
+  }
 
   /* ---- i18n helper ---- */
   function t(key, n){
@@ -425,7 +470,8 @@
         if(typeof s.cat==="number"&&CATS[s.cat])state.cat=s.cat;
         if(s.catRem&&typeof s.catRem==="object"&&!Array.isArray(s.catRem))state.catRem=s.catRem;
         if(Array.isArray(s.review))state.review=s.review; if(Array.isArray(s.revRem))state.revRem=s.revRem;
-        if(s.roundMiss&&typeof s.roundMiss==="object"&&!Array.isArray(s.roundMiss))state.roundMiss=s.roundMiss; }
+        if(s.roundMiss&&typeof s.roundMiss==="object"&&!Array.isArray(s.roundMiss))state.roundMiss=s.roundMiss;
+        if(s.roundStat&&typeof s.roundStat==="object"&&!Array.isArray(s.roundStat))state.roundStat=s.roundStat; }
     }catch(e){}
   }
   // 保存できなかったら（容量・プライベートモードなど）その場で1回だけ知らせる
@@ -492,6 +538,8 @@
     el("guide-btn").textContent=gtx("again");
     var gd=document.querySelector(".guide-ov");
     if(gd && gd._draw) gd._draw();   // はじめての あそびかた も いまの ページのまま訳し直す
+    var lh=el("lock-hint"); if(!lh.hidden) lh.textContent=t("lockHint");
+    if(currentScreen==="summary" && sumData) renderSummary();
     if(currentScreen==="result"){   // 解説の画面で言語を変えたとき、判定・ごほうび・つぎへボタンも訳し直す
       var vd=el("verdict"), rh=el("reward-hint");
       vd.textContent=vd.classList.contains("ok")?t("correct"):t("wrong");
@@ -554,6 +602,10 @@
       var em=document.createElement("span"); em.className="cemoji"; em.textContent=c.emoji;
       var nm=document.createElement("span"); nm.className="cname"; nm.textContent=t(c.key);
       var ct=document.createElement("span"); ct.className="ccount"; ct.textContent=t("catCount", n);
+      // あと◯もんで ひとまわり（その ぶもん専用の のこりデッキ catRem の長さ。まだなら ぜんぶ）
+      var ids=QUESTIONS.filter(function(q){ return q.id>=c.from && q.id<=c.to; }).map(function(q){ return q.id; });
+      var left=((state.catRem[i]||[]).filter(function(id){ return ids.indexOf(id)>=0; })).length || ids.length;
+      if(left>0){ var lf=document.createElement("span"); lf.className="cleft"; lf.textContent=t("catLeft", left); nm.appendChild(lf); }
       b.appendChild(em); b.appendChild(nm); b.appendChild(ct);
       b.addEventListener("click", function(){
         if(WiseAudio){ WiseAudio.unlock(); WiseAudio.sfx("tap"); }
@@ -609,6 +661,8 @@
     setRich(el("q-topic"), current.topic||"");
     el("q-emoji").textContent=current.emoji||"❓";
     setRich(el("q-text"), current.question);
+    el("q-text").setAttribute("aria-label", plain(current.question));   // ふりがなを ぬいた もじを 読み上げに
+    el("lock-hint").hidden=true;
     var box=el("q-choices"); box.innerHTML="";
     // ★毎回ランダムに並べ替える（位置で覚えさせない）。origは元の選択肢番号。
     var order=shuffle(current.choices.map(function(_,i){ return i; }));
@@ -617,10 +671,12 @@
       var mark='<span class="mark">'+LABELS[pos]+'</span>';
       if(lang==="ja"){ b.innerHTML=mark+(current.choices[orig]||""); }
       else { b.innerHTML=mark; b.appendChild(document.createTextNode(current.choices[orig])); }
+      b.setAttribute("aria-label", LABELS[pos]+". "+plain(current.choices[orig]));
       b.addEventListener("click", function(){ onAnswer(orig,b); }, {once:true});
       box.appendChild(b);
     });
     show("quiz");
+    try{ el("q-text").focus({ preventScroll:true }); }catch(e){}   // もんだいが かわったら 読み上げが もんだい文から はじまる
   }
   function onAnswer(choiceIndex, btn){
     if(answeredNow) return;   // こたえた あとは ほかの 選択肢を おしても 数えない（キーボード・読み上げソフトでも）
@@ -652,14 +708,21 @@
     if(correct && i>=0) state.review.splice(i,1);   // どこで せいかいしても とき直しから はずす
     if(reviewMode) return;
     var key=missKey(), m=state.roundMiss[key]||[];
+    // ひとまわりの せいせき（正誤の個数だけ）
+    var rs=state.roundStat[key]||(state.roundStat[key]={ ok:0, n:0, c:{} });
+    rs.n+=1; if(correct) rs.ok+=1;
+    var ci=catIndexOf(id);
+    if(ci>=0){ var cc=rs.c[ci]||(rs.c[ci]=[0,0]); cc[1]+=1; if(correct) cc[0]+=1; }
     if(!correct && m.indexOf(id)<0) m.push(id);
     if(correct){ var j=m.indexOf(id); if(j>=0) m.splice(j,1); }
     state.roundMiss[key]=m;
     if(getRem().length===0){   // この こたえで ひとまわり おわり
       m.forEach(function(x){ if(state.review.indexOf(x)<0) state.review.push(x); });
       state.roundMiss[key]=[];
+      pendingRound=rs; delete state.roundStat[key];   // この ひとまわりの せいせきは 次の「つぎへ」で 見せる
     }
   }
+  function catIndexOf(id){ for(var i=0;i<CATS.length;i++){ if(id>=CATS[i].from && id<=CATS[i].to) return i; } return -1; }
 
   /* ---- result ---- */
   function toResult(correct){
@@ -672,8 +735,14 @@
     hint.textContent=t("rewardPending", pendingExp);
     renderResultExp(state.level, state.exp);
     explEl.scrollTop=0; earning=false;
+    var lh=el("lock-hint");
+    if(!lockHintSeen()){ lh.textContent=t("lockHint"); lh.hidden=false; markLockHintSeen(); } else { lh.hidden=true; }
     show("result"); startReadLock();
   }
+  // 「ゆっくり よんでから」の一文は はじめての 1回だけ（この たんまつの なかだけ）
+  var HINT_KEY=STORAGE_KEY.replace(".save.v1", ".hint.v1");
+  function lockHintSeen(){ try{ return localStorage.getItem(HINT_KEY)==="1"; }catch(e){ return false; } }
+  function markLockHintSeen(){ try{ localStorage.setItem(HINT_KEY, "1"); }catch(e){} }
   function renderResultExp(level, exp){ el("r-lv").textContent=level; el("r-bar").style.width=Math.max(0,Math.min(100,(exp/EXP_PER_LEVEL)*100))+"%"; }
 
   function startReadLock(){
@@ -709,7 +778,7 @@
     scrollCue.classList.add("hide");
     var hint=el("reward-hint"); hint.textContent=t("rewardEarned", pendingExp); hint.classList.add("pop");
     WiseAudio && WiseAudio.sfx("exp");
-    animateExpGain(pendingExp, function(){ setTimeout(startQuiz, 250); });
+    animateExpGain(pendingExp, function(){ setTimeout(function(){ if(pendingRound) showSummary(); else startQuiz(); }, 250); });
   }
   function animateExpGain(amount, done){
     var startExp=state.exp, target=startExp+amount, STEP=40, steps=Math.max(1,Math.round(850/STEP)), i=0;
@@ -763,10 +832,48 @@
   }
   function dismissLevelUp(){ el("levelup-overlay").classList.remove("show"); var r=resolveAfterOverlay; resolveAfterOverlay=null; r&&r(); }
 
+  /* ---- ひとまわり おわった画面（2026-11-11）：何もん中 何もん せいかい・ぶもんごとの とくい / もうすこし ---- */
+  function showSummary(){
+    sumData=pendingRound; pendingRound=null;
+    if(!sumData){ startQuiz(); return; }
+    renderSummary();
+    show("summary");
+    try{ el("sum-title").focus({ preventScroll:true }); }catch(e){}
+  }
+  function renderSummary(){
+    var d=sumData; if(!d) return;
+    el("sum-title").textContent=t("sumTitle");
+    el("sum-ok").textContent=d.ok+" / "+d.n;
+    el("sum-lbl").textContent=t("sumCorrect");
+    el("sum-next").textContent=t("sumContinue");
+    el("sum-home").textContent=t("sumHome");
+    var rows=[];
+    Object.keys(d.c||{}).forEach(function(k){ var cc=d.c[k]; var i=parseInt(k,10); if(CATS[i] && cc && cc[1]>0) rows.push({ i:i, ok:cc[0], n:cc[1], r:cc[0]/cc[1] }); });
+    rows.sort(function(a,b){ return a.i-b.i; });
+    var best=null, worst=null;
+    if(rows.length>=2){
+      rows.forEach(function(x){ if(!best||x.r>best.r) best=x; if(!worst||x.r<worst.r) worst=x; });
+      if(best.r===worst.r){ best=null; worst=null; }
+    }
+    var box=el("sum-cats"); box.innerHTML="";
+    rows.forEach(function(x){
+      var row=document.createElement("div"); row.className="sum-row";
+      var top=document.createElement("div"); top.className="sum-row-top";
+      var em=document.createElement("span"); em.className="cemoji"; em.textContent=CATS[x.i].emoji; em.setAttribute("aria-hidden","true");
+      var nm=document.createElement("span"); nm.className="cname"; nm.textContent=t(CATS[x.i].key);
+      var nu=document.createElement("span"); nu.className="cnum"; nu.textContent=x.ok+" / "+x.n;
+      top.appendChild(em); top.appendChild(nm); top.appendChild(nu); row.appendChild(top);
+      var bar=document.createElement("div"); bar.className="bar"; bar.setAttribute("aria-hidden","true");
+      var fill=document.createElement("span"); fill.style.width=Math.round(x.r*100)+"%"; bar.appendChild(fill); row.appendChild(bar);
+      if(x===best||x===worst){ var tg=document.createElement("span"); tg.className="sum-tag"; tg.textContent=(x===best?"⭐ ":"🌱 ")+t(x===best?"sumBest":"sumWorst"); row.appendChild(tg); }
+      box.appendChild(row);
+    });
+  }
+
   function resetProgress(){
     askBox(t("resetConfirm"), function(ok){
       if(!ok) return;
-      state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{}, review:[], revRem:[], roundMiss:{} }; save(); renderHome();
+      state={ level:1, exp:0, remaining:[], answered:0, cat:null, catRem:{}, review:[], revRem:[], roundMiss:{}, roundStat:{} }; pendingRound=null; save(); renderHome();
     });
   }
 
@@ -927,6 +1034,7 @@
     if(el("lang-overlay").classList.contains("show")){ el("lang-close").click(); return; }
     if(el("levelup-overlay").classList.contains("show")){ el("lu-ok").click(); return; }
     if(currentScreen==="cats"){ el("cats-home").click(); return; }
+    if(currentScreen==="summary"){ el("sum-home").click(); return; }
     if(currentScreen==="quiz" || currentScreen==="result"){
       if(autoMoving()) return;
       askBox(t("leaveConfirm"), function(ok){
@@ -968,12 +1076,14 @@
   // まだ こたえていない いまの もんだいは デッキの先頭に もどす（ひとまわりから消えないように）。こたえた直後なら 解説へは進まない
   el("quiz-home").addEventListener("click", function(){
     WiseAudio&&WiseAudio.sfx("tap");
-    clearTimeout(toResultTimer); toResultTimer=null;
+    clearTimeout(toResultTimer); toResultTimer=null; pendingRound=null;
     if(currentScreen==="quiz" && current && !answeredNow){
       var r=getRem(); if(r.indexOf(current.id)<0){ r.unshift(current.id); setRem(r); }
     }
     reviewMode=false; state.cat=null; save(); renderHome(); show("home");
   });
+  el("sum-next").addEventListener("click", function(){ if(WiseAudio){ WiseAudio.unlock(); WiseAudio.sfx("tap"); } startQuiz(); });
+  el("sum-home").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); sumData=null; reviewMode=false; state.cat=null; save(); renderHome(); show("home"); });
   el("reset-btn").addEventListener("click", resetProgress);
   el("guide-btn").addEventListener("click", function(){ WiseAudio&&WiseAudio.sfx("tap"); openGuide(false); });
   nextBtn.addEventListener("click", function(){ if(nextBtn.disabled) return; WiseAudio&&WiseAudio.sfx("tap"); earnThenAdvance(); });
